@@ -121,7 +121,7 @@ namespace h_gui::controls
 		size_ = {
 			h_gui_style::structural::control_width
 			+ (h_gui_style::structural::base::pad * 2),
-			h_gui_style::structural::base::block_height
+			h_gui_style::structural::base::block_height * 2
 		};
 
 		this->action = globals::invoker->add_func([action](std::any n) { action(); });
@@ -129,34 +129,52 @@ namespace h_gui::controls
 
 	blocks_count button::render(uint64_t tick, LPPOINT cursor_pos)
 	{
+		static D2D1_COLOR_F button_color = h_gui_style::theme::colors::control::button;
+
 		{
+			//back
 			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(hovered_
-				? h_gui_style::theme::colors::control::button_hovered
-				: h_gui_style::theme::colors::control::button);
+
+			gui_manager::renderer->SetSolidColor(button_color);
+
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect(
 					{
 						origin_.x + h_gui_style::structural::base::margin,
-						origin_.y + h_gui_style::structural::base::pad,
+						origin_.y + h_gui_style::structural::base::pad + h_gui_style::structural::base::margin,
 						origin_.x + size_.x - h_gui_style::structural::base::pad,
-						origin_.y + size_.y - h_gui_style::structural::base::pad
+						origin_.y + size_.y - h_gui_style::structural::base::pad - h_gui_style::structural::base::margin
 					},
 					h_gui_style::theme::border_radius / 2,
 					h_gui_style::theme::border_radius / 2), true, false);
 			gui_manager::renderer->PopSolidColor();
+
+
+			//stroke
 			gui_manager::renderer->PushSolidColor();
 			gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::control::button_stroke);
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect(
 					{
-						origin_.x + h_gui_style::structural::base::margin,
-						origin_.y + h_gui_style::structural::base::pad,
-						origin_.x + size_.x - h_gui_style::structural::base::pad,
-						origin_.y + size_.y - h_gui_style::structural::base::pad
+			origin_.x + h_gui_style::structural::base::margin,
+				origin_.y + h_gui_style::structural::base::pad + h_gui_style::structural::base::margin,
+				origin_.x + size_.x - h_gui_style::structural::base::pad,
+				origin_.y + size_.y - h_gui_style::structural::base::pad - h_gui_style::structural::base::margin
 					},
 					h_gui_style::theme::border_radius / 2,
 					h_gui_style::theme::border_radius / 2), false, true);
+			gui_manager::renderer->PopSolidColor();
+		}
+
+		{
+			gui_manager::renderer->PushSolidColor();
+			gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::base::bg);
+
+			//TODO: Center text
+			gui_manager::renderer->DrawString(this->label.c_str(), this->label.length(), h_gui_style::theme::text::font_size, {
+										origin_.x + (h_gui_style::structural::base::margin * 2),
+						origin_.y + h_gui_style::structural::base::pad + h_gui_style::structural::base::margin,
+			});
 			gui_manager::renderer->PopSolidColor();
 		}
 
@@ -166,11 +184,20 @@ namespace h_gui::controls
 			if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
 			{
 				globals::invoker->invoke(this->action, std::any{});
+			}else if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
+			{
+				button_color = anim::lerp_colf(button_color, h_gui_style::theme::colors::control::button_pressed, 0.75f);
+			}else
+			{
+				button_color = anim::lerp_colf(button_color, h_gui_style::theme::colors::control::button_hovered, 0.05f);
 			}
+		}else
+		{
+			button_color = anim::lerp_colf(button_color, h_gui_style::theme::colors::control::button, 0.05f);
 		}
 
 
-		return 1;
+		return 2;
 	}
 
 

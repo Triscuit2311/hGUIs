@@ -25,5 +25,16 @@ namespace anim
 		return { start.x + (end.x - start.x) * alpha, start.y + (end.y - start.y) * alpha };
 	}
 
+	D2D1_COLOR_F lerp_colf(const D2D1_COLOR_F& start, const D2D1_COLOR_F& end, float alpha)
+	{
+		alpha = std::clamp(alpha, 0.0f, 1.0f);
+
+		return {
+			start.r + (end.r - start.r) * alpha,
+			start.g + (end.g - start.g) * alpha,
+			start.b + (end.b - start.b) * alpha,
+			start.a + (end.a - start.a) * alpha
+		};
+	}
 
 }

@@ -38,6 +38,8 @@ namespace h_gui_style
 				return static_cast<float>(len) * 0.65f * (font_size);
 			}
 
+			//TODO: center in area
+
 		}
 
 
@@ -74,8 +76,8 @@ namespace h_gui_style
 
 				constexpr D2D1_COLOR_F button{ 0.6f, 0.6f, 0.6f, 1.0f };
 				constexpr D2D1_COLOR_F button_stroke{ 0.3f, 0.3f, 0.4f, 1.0f };
-				constexpr D2D1_COLOR_F button_hovered{ 0.8f, 0.8f, 0.8f, 1.0f };
-				constexpr D2D1_COLOR_F button_pressed{ 1.0f, 0.0f, 0.0f, 1.0f };
+				constexpr D2D1_COLOR_F button_hovered{ 0.7f, 0.7f, 0.7f, 1.0f };
+				constexpr D2D1_COLOR_F button_pressed{ 0.8f, 1.0f, 0.8f, 1.0f };
 
 			}
 

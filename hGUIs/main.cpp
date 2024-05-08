@@ -23,11 +23,12 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 
 	grp1->toggle(&b, L"TOGGLE", []() { LOG("ENABLED"); }, []() { LOG("DISABLED"); });
 
+	grp1->button(L"Butt", []() { LOG("Action!"); });
+
 	grp1->slider_double(&dub, 0, 200, L"Slider f64: %.1lf", [](const double n) { LOG("dub: %.2f", n); });
 
 	grp1->slider_long(&i32, 0, 200, L"Slider i32: %ld", [](const long n) { LOG("long: %ld", n); });
 
-	grp1->button( L"Butt", []() { LOG("Action!"); });
 
 }
 

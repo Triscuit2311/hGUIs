@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "hGUI.h"
 #include <format>
+
+#include "animations.hpp"
+#include "animations.hpp"
 #include "style.hpp"
 #include "logging.h"
 
@@ -127,29 +130,40 @@ namespace h_gui::controls
 	blocks_count button::render(uint64_t tick, LPPOINT cursor_pos)
 	{
 		{
-			// Slider line
 			gui_manager::renderer->PushSolidColor();
 			gui_manager::renderer->SetSolidColor(hovered_
-				? h_gui_style::theme::colors::control::slider_hovered
-				: h_gui_style::theme::colors::control::slider);
-			gui_manager::renderer->DrawLine(
-				{
-					origin_.x + h_gui_style::structural::base::margin,
-					origin_.y +h_gui_style::structural::base::margin
-				},
-				{
-					origin_.x + size_.x - h_gui_style::structural::base::pad,
-					origin_.y + h_gui_style::structural::base::margin
-				},
-				1
-			);
+				? h_gui_style::theme::colors::control::button_hovered
+				: h_gui_style::theme::colors::control::button);
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(
+					{
+						origin_.x + h_gui_style::structural::base::margin,
+						origin_.y + h_gui_style::structural::base::pad,
+						origin_.x + size_.x - h_gui_style::structural::base::pad,
+						origin_.y + size_.y - h_gui_style::structural::base::pad
+					},
+					h_gui_style::theme::border_radius / 2,
+					h_gui_style::theme::border_radius / 2), true, false);
+			gui_manager::renderer->PopSolidColor();
+			gui_manager::renderer->PushSolidColor();
+			gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::control::button_stroke);
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(
+					{
+						origin_.x + h_gui_style::structural::base::margin,
+						origin_.y + h_gui_style::structural::base::pad,
+						origin_.x + size_.x - h_gui_style::structural::base::pad,
+						origin_.y + size_.y - h_gui_style::structural::base::pad
+					},
+					h_gui_style::theme::border_radius / 2,
+					h_gui_style::theme::border_radius / 2), false, true);
 			gui_manager::renderer->PopSolidColor();
 		}
 
 
 		if (hovered_ && enabled_)
 		{
-			if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
+			if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
 			{
 				globals::invoker->invoke(this->action, std::any{});
 			}
@@ -157,7 +171,6 @@ namespace h_gui::controls
 
 
 		return 1;
-		//return control::render(tick, cursor_pos);
 	}
 
 
@@ -259,8 +272,7 @@ namespace h_gui::controls
 		{
 			if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
 			{
-				//TODO: LERP
-				percent_ = ((cursor_pos->x - min_pos_x) / (max_pos_x - min_pos_x));
+				percent_ = anim::lerp(percent_, (cursor_pos->x - min_pos_x) / (max_pos_x - min_pos_x), 0.9f);
 				percent_ = percent_ < 0 ? 0 : percent_ > 1 ? 1.0f : percent_;
 
 				*this->data_ = min_ + ((max_ - min_) * percent_);
@@ -374,8 +386,7 @@ namespace h_gui::controls
 		{
 			if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
 			{
-				//TODO: LERP
-				percent_ = ((cursor_pos->x - min_pos_x) / (max_pos_x - min_pos_x));
+				percent_ = anim::lerp(percent_, (cursor_pos->x - min_pos_x) / (max_pos_x - min_pos_x), 0.9f);
 				percent_ = percent_ < 0 ? 0 : percent_ > 1 ? 1.0f : percent_;
 
 				*this->data_ = min_ + ((max_ - min_) * percent_);
@@ -706,7 +717,8 @@ namespace h_gui
 							cursor_pos->y - this->origin_.y
 						};
 					}
-					this->origin_ = {cursor_pos->x - drag_anchor_.x, cursor_pos->y - drag_anchor_.y};
+
+					this->origin_ = anim::lerp_2f(this->origin_, { cursor_pos->x - drag_anchor_.x, cursor_pos->y - drag_anchor_.y }, 0.55f);
 				}
 				else
 				{

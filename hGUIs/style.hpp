@@ -25,10 +25,9 @@ namespace h_gui_style
 		constexpr float border_stroke = 1.0f;
 		constexpr float border_radius = 8.0f;
 
-
 		namespace text
 		{
-			constexpr float font_size = 16.0f;
+			constexpr float font_size = 14.0f;
 
 			inline float get_text_width(const size_t len)
 			{
@@ -38,7 +37,9 @@ namespace h_gui_style
 				// TODO: parse the font glyphs and calc
 				return static_cast<float>(len) * 0.65f * (font_size);
 			}
+
 		}
+
 
 		namespace colors
 		{
@@ -77,6 +78,9 @@ namespace h_gui_style
 				constexpr D2D1_COLOR_F button_pressed{ 1.0f, 0.0f, 0.0f, 1.0f };
 
 			}
+
 		}
+
 	}
+
 }

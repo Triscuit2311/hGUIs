@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Framework">
+      <UniqueIdentifier>{16fb2d84-2cc7-4e40-a98e-b7770e0952a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Framework\hGUI">
+      <UniqueIdentifier>{ce7e79cb-600a-47fa-98e4-1e73ae2bd385}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Framework\NewFilter1">
+      <UniqueIdentifier>{2dfbe8da-52a4-4361-9795-aac0f8c65c66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Framework\Dx">
+      <UniqueIdentifier>{a68f4bfe-f4b0-48e8-a7d0-2375594112d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Framework\Utils">
+      <UniqueIdentifier>{af6a5a6f-95a3-4c41-995a-1e2f5f48a28e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PCH">
+      <UniqueIdentifier>{e6e41550-2cf7-4e3b-86c3-0a825cee7adf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hGUI.cpp">
+      <Filter>Framework\hGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="D2xOverlay.cpp">
+      <Filter>Framework\Dx</Filter>
+    </ClCompile>
+    <ClCompile Include="DiInputManager.cpp">
+      <Filter>Framework\Dx</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>PCH</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="hGUI.h">
+      <Filter>Framework\hGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="animations.hpp">
+      <Filter>Framework\hGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="D2xOverlay.h">
+      <Filter>Framework\Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="DiInputManager.h">
+      <Filter>Framework\Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="dxgi.hpp">
+      <Filter>Framework\Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="style.hpp">
+      <Filter>Framework\hGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="InputDefines.h">
+      <Filter>Framework\Dx</Filter>
+    </ClInclude>
+    <ClInclude Include="FontLoader.h">
+      <Filter>Framework\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsUtils.h">
+      <Filter>Framework\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>PCH</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

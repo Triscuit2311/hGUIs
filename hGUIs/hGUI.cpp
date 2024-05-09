@@ -659,44 +659,165 @@ namespace h_gui
 {
 	blocks_count h_gui::window::render(uint64_t tick, LPPOINT cursor_pos)
 	{
+		static D2D1_COLOR_F accent_color = h_gui_style::theme::colors::base::accent_a;
+
 		if (!enabled_) { return 0; }
 
 
-		gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::base::bg);
-		gui_manager::renderer->SetFillBrushMode(Renderer::D2DxOverlay::SOLID);
-		gui_manager::renderer->DrawCustomRoundedRect(
-			D2D1::RoundedRect({origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y},
-			                  h_gui_style::theme::border_radius,
-			                  h_gui_style::theme::border_radius), true, false);
-
-
+		gui_manager::renderer->PushSolidColor();
 		gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::base::fg);
-		gui_manager::renderer->DrawLine(
-			{origin_.x, origin_.y + h_gui_style::structural::base::block_height},
-			{origin_.x + size_.x, origin_.y + h_gui_style::structural::base::block_height},
-			h_gui_style::theme::border_stroke);
 
-		// Border
+
 		{
-			auto border_color = h_gui_style::theme::colors::window::border;
-			if (hovered_)
-			{
-				border_color = h_gui_style::theme::colors::window::border_hovered;
-			}
 			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(border_color);
-			gui_manager::renderer->DrawCustomRoundedRect(
-				D2D1::RoundedRect({origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y},
-				                  h_gui_style::theme::border_radius,
-				                  h_gui_style::theme::border_radius), false, true);
+			gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::base::bg);
+			gui_manager::renderer->SetFillBrushMode(Renderer::D2DxOverlay::SOLID);
+			gui_manager::renderer->DrawSolidRect(
+				{ origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y },
+				 true, false);
 			gui_manager::renderer->PopSolidColor();
+
+
+			// Border
+			{
+				gui_manager::renderer->PushSolidColor();
+				gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::window::border);
+				gui_manager::renderer->DrawSolidRect(
+				{ origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y },false, true);
+				gui_manager::renderer->DrawLine(
+					{ origin_.x, origin_.y + (h_gui_style::structural::base::block_height * 2) - h_gui_style::structural::base::margin },
+					{ origin_.x + size_.x, origin_.y + (h_gui_style::structural::base::block_height * 2) - h_gui_style::structural::base::margin },
+					h_gui_style::theme::border_stroke);
+				gui_manager::renderer->PopSolidColor();
+			}
+
+
+			//border accents
+			{
+				const float thickness = h_gui_style::structural::base::pad;
+				const float half_thick = thickness / 2;
+				const float length = h_gui_style::structural::base::margin;
+
+				gui_manager::renderer->PushSolidColor();
+				gui_manager::renderer->SetSolidColor(accent_color);
+
+				//TL
+				gui_manager::renderer->DrawSolidRect(
+					{
+						origin_.x -half_thick,
+						origin_.y - half_thick,
+						origin_.x + length,
+						origin_.y + half_thick
+					}, true, false);
+				gui_manager::renderer->DrawSolidRect(
+					{
+						origin_.x - half_thick,
+						origin_.y - half_thick,
+						origin_.x + half_thick,
+						origin_.y + length
+
+					}, true, false);
+
+
+				//TR
+				gui_manager::renderer->DrawSolidRect(
+					{
+						origin_.x + size_.x - length,
+						origin_.y - half_thick,
+						origin_.x + size_.x + half_thick,
+						origin_.y + half_thick
+					}, true, false);
+				gui_manager::renderer->DrawSolidRect(
+					{
+						origin_.x + size_.x - half_thick,
+						origin_.y - half_thick,
+						origin_.x + size_.x + half_thick,
+						origin_.y + length
+
+					}, true, false);
+
+
+				//BL
+				gui_manager::renderer->DrawSolidRect(
+					{
+						origin_.x - half_thick,
+						origin_.y + size_.y - half_thick,
+						origin_.x + length,
+						origin_.y + size_.y + half_thick
+					}, true, false);
+				gui_manager::renderer->DrawSolidRect(
+					{
+						origin_.x - half_thick,
+						origin_.y + size_.y - half_thick,
+						origin_.x + half_thick,
+						origin_.y + size_.y - length
+
+					}, true, false);
+
+				//BR
+				gui_manager::renderer->DrawSolidRect(
+					{
+						origin_.x + size_.x - length,
+						origin_.y + size_.y - half_thick,
+						origin_.x + size_.x + half_thick,
+						origin_.y + size_.y + half_thick
+					}, true, false);
+				gui_manager::renderer->DrawSolidRect(
+					{
+						origin_.x + size_.x - half_thick,
+						origin_.y + size_.y - half_thick,
+						origin_.x + size_.x + half_thick,
+						origin_.y + size_.y - length
+
+					}, true, false);
+
+
+				gui_manager::renderer->PopSolidColor();
+			}
+
+
+
+
 		}
+
+		// gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::base::bg);
+		// gui_manager::renderer->SetFillBrushMode(Renderer::D2DxOverlay::SOLID);
+		// gui_manager::renderer->DrawCustomRoundedRect(
+		// 	D2D1::RoundedRect({origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y},
+		// 	                  h_gui_style::theme::border_radius,
+		// 	                  h_gui_style::theme::border_radius), true, false);
+		//
+		//
+		// gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::base::fg);
+		// gui_manager::renderer->DrawLine(
+		// 	{origin_.x, origin_.y + h_gui_style::structural::base::block_height},
+		// 	{origin_.x + size_.x, origin_.y + h_gui_style::structural::base::block_height},
+		// 	h_gui_style::theme::border_stroke);
+		//
+		// // Border
+		// {
+		// 	auto border_color = h_gui_style::theme::colors::window::border;
+		// 	if (hovered_)
+		// 	{
+		// 		border_color = h_gui_style::theme::colors::window::border_hovered;
+		// 	}
+		// 	gui_manager::renderer->PushSolidColor();
+		// 	gui_manager::renderer->SetSolidColor(border_color);
+		// 	gui_manager::renderer->DrawCustomRoundedRect(
+		// 		D2D1::RoundedRect({origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y},
+		// 		                  h_gui_style::theme::border_radius,
+		// 		                  h_gui_style::theme::border_radius), false, true);
+		// 	gui_manager::renderer->PopSolidColor();
+		// }
 
 		gui_manager::renderer->DrawString(title_.c_str(), title_.length(),
 		                                  h_gui_style::theme::text::font_size,
-		                                  {origin_.x + h_gui_style::structural::base::margin, origin_.y});
+		                                  {
+		                                  	origin_.x + (h_gui_style::structural::base::margin * 2),
+		                                  	origin_.y + (h_gui_style::structural::base::margin * 2)
+		                                  });
 
-		uint16_t blocks_ct = 1;
+		uint16_t blocks_ct = 2;
 		for (const auto& grp : groups_)
 		{
 			float vert_offset = (blocks_ct * (h_gui_style::structural::base::block_height +
@@ -718,11 +839,16 @@ namespace h_gui
 			}
 			else
 			{
-				grp->calc_hovered(cursor_pos); //TODO: Relative
+				grp->calc_hovered(cursor_pos);
 			}
 
 			blocks_ct += grp->render(tick, cursor_pos);
 		}
+
+
+		// Pop FG
+		gui_manager::renderer->PopSolidColor();
+
 
 		size_ = {
 			size_.x, (blocks_ct * (h_gui_style::structural::base::block_height + h_gui_style::structural::base::pad)) +
@@ -731,6 +857,7 @@ namespace h_gui
 
 		if (hovered_ || being_dragged)
 		{
+			accent_color = anim::lerp_colf(accent_color, h_gui_style::theme::colors::base::accent_b, 0.025f);
 			if (cursor_pos->y < origin_.y + h_gui_style::structural::base::block_height || being_dragged)
 			{
 				if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
@@ -745,13 +872,19 @@ namespace h_gui
 						};
 					}
 
-					this->origin_ = anim::lerp_2f(this->origin_, { cursor_pos->x - drag_anchor_.x, cursor_pos->y - drag_anchor_.y }, 0.55f);
+					this->origin_ = anim::lerp_2f(
+						this->origin_, 
+						{ cursor_pos->x - drag_anchor_.x, cursor_pos->y - drag_anchor_.y }, 
+						0.55f);
 				}
 				else
 				{
 					being_dragged = false;
 				}
 			}
+		}else
+		{
+			accent_color = anim::lerp_colf(accent_color, h_gui_style::theme::colors::base::accent_a, 0.025f);
 		}
 
 

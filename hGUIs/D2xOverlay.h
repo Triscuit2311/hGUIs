@@ -131,6 +131,9 @@ namespace Renderer {
 		void Initialize(HWND tWindow);
 
 		D2DBitmapID CreateBitmapImageFromFile(const std::wstring& filePath);
+		void ToggleAcrylicEffect(bool enable);
+		void SetInputInterception(bool enabled);
+
 
 		/**
 		 * @brief Draws a line from the specified origin to the specified destination

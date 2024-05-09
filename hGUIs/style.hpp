@@ -18,6 +18,10 @@ namespace h_gui_style
 		constexpr float control_width = base::block_height * factors::control_width_factor;
 		constexpr float group_width = control_width + (2 * base::margin);
 		constexpr float window_width = group_width + (2 * base::margin);
+
+		constexpr float window_corner_thickness = base::pad * 2;
+		constexpr float window_corner_length = base::margin * 2;
+
 	}
 
 	namespace theme
@@ -45,16 +49,33 @@ namespace h_gui_style
 
 		namespace colors
 		{
+			namespace
+			{
+				constexpr D2D1_COLOR_F rgb_to_color_f(int r, int g, int b, float a)
+				{
+					return {
+						float(r) / 255.0f,
+						float(g) / 255.0f,
+						float(b) / 255.0f,
+						a,
+					};
+				}
+			}
 			namespace base
 			{
-				constexpr D2D1_COLOR_F bg{0.2f, 0.2f, 0.2f, 0.8f};
+				constexpr D2D1_COLOR_F bg{0.2f, 0.2f, 0.2f, 0.6f};
 				constexpr D2D1_COLOR_F fg{0.8f, 0.8f, 0.8f, 0.9f};
+
+
+				constexpr D2D1_COLOR_F accent_a = rgb_to_color_f(255, 201, 74, 1.0f);
+				constexpr D2D1_COLOR_F accent_b = rgb_to_color_f(74, 255, 110,1.0f);
+
 			}
 
 			namespace window
 			{
-				constexpr D2D1_COLOR_F border{0.9f, 0.9f, 0.9f, 0.8f};
-				constexpr D2D1_COLOR_F border_hovered{0.9f, 0.9f, 0.9f, 1.0f};
+				constexpr D2D1_COLOR_F border{0,0,0, 1.0f};
+				constexpr D2D1_COLOR_F border_hovered{ 0.1f, 0.1f, 0.1f, 1.0f };
 			}
 
 			namespace group
@@ -80,6 +101,8 @@ namespace h_gui_style
 				constexpr D2D1_COLOR_F button_pressed{ 0.8f, 1.0f, 0.8f, 1.0f };
 
 			}
+
+
 
 		}
 

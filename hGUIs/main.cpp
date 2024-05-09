@@ -12,7 +12,8 @@ Renderer::D2DBitmapID splash_img;
 bool b;
 double dub = 99.0;
 long i32 = 123;
-bool show_menu = true;
+bool show_menu = false;
+
 
 
 // Runs once at start-time, initializes all the windows, groups and controls for the GUI
@@ -25,12 +26,16 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 
 	grp1->button(L"Butt", []() { LOG("Action!"); });
 
-	grp1->slider_double(&dub, 0, 200, L"Slider f64: %.1lf", [](const double n) { LOG("dub: %.2f", n); });
+	grp1->slider_double(&dub, 0, 200, L"Slider f64: %.1lf", [](const double n)
+	{
+		LOG("dub: %.2f", n);
+	});
 
 	grp1->slider_long(&i32, 0, 200, L"Slider i32: %ld", [](const long n) { LOG("long: %ld", n); });
 
-
 }
+
+
 
 // Runs once at start-time, does all resource loading from disk
 void load_resources(Renderer::D2DxOverlay* renderer)
@@ -48,15 +53,20 @@ void load_resources(Renderer::D2DxOverlay* renderer)
 
 
 // Executed once per frame, before any rendering
-void pre_render(std::shared_ptr<DiInputManager> inputs)
+void pre_render(std::shared_ptr<DiInputManager> inputs, Renderer::D2DxOverlay* renderer)
 {
-	if (inputs->IsInputJustReleased(DiInputManager::vKb_INSERT)) { show_menu = !show_menu; }
+	if (inputs->IsInputJustReleased(DiInputManager::vKb_INSERT))
+	{
+		show_menu = !show_menu;
+		renderer->ToggleAcrylicEffect(show_menu);
+		renderer->SetInputInterception(show_menu);
+	}
 }
 
 // Draw directly to the screen BEHIND the main GUI
-void render_direct_pre(UINT32 width, UINT32 height, LPPOINT cur_pos, const Renderer::D2DxOverlay* renderer)
+void render_direct_pre(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::D2DxOverlay* renderer)
 {
-	renderer->DrawSolidRect({ 10, 10, 20, 20 }, true, 1);
+	renderer->DrawString(L"Triscuit2311", 12, 8.0f, { 10,10 });
 }
 
 // Draw the main GUI and gui components, only modify if needed
@@ -72,11 +82,11 @@ void render_gui(UINT32 width, UINT32 height, LPPOINT cur_pos)
 // Draw directly to the screen ON TOP of the main GUI
 void render_direct_post(UINT32 width, UINT32 height, LPPOINT cur_pos, const Renderer::D2DxOverlay* renderer)
 {
-	renderer->DrawBitmap(splash_img,
-		{
-			width / 2.0f - 128.0f, height / 2.0f - 128.0f, width / 2.0f + 128.0f,
-			height / 2.0f + 128.0f
-		});
+	// renderer->DrawBitmap(splash_img,
+	// 	{
+	// 		width / 2.0f - 128.0f, height / 2.0f - 128.0f, width / 2.0f + 128.0f,
+	// 		height / 2.0f + 128.0f
+	// 	});
 }
 
 // Executed once per frame, after all rendering is complete
@@ -92,7 +102,7 @@ void init_once(Renderer::D2DxOverlay*& renderer, std::shared_ptr<DiInputManager>
 	{
 		inputs = std::make_unique<DiInputManager>();
 		inputs->Init(renderer->GetTargetHwndRef());
-		renderer->SetSolidColor({ 1.0f, 0.3f, 0.3f, 1 });
+		renderer->SetSolidColor({ 0.8f, 0.8f, 0.8f, 1 });
 
 		load_resources(renderer);
 
@@ -125,8 +135,6 @@ void render_tick(UINT32 width, UINT32 height)
 	std::chrono::duration<double> delta_secs = curr_time - last_time;
 	last_time = curr_time;
 
-	//LOG("DELTA: %lf", delta_secs.count());
-
 
 	init_once(renderer, inputs);
 
@@ -136,7 +144,7 @@ void render_tick(UINT32 width, UINT32 height)
 
 	windows_utils::abs_curpos(*cur_pos);
 
-	pre_render(inputs);
+	pre_render(inputs, renderer);
 	render_direct_pre(width, height, cur_pos, renderer);
 	render_gui(width, height, cur_pos);
 	render_direct_post(width, height, cur_pos, renderer);

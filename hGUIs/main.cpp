@@ -23,19 +23,33 @@ bool exit_thread = false;
 void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 {
 	auto win1 = ws->add_window(L"windonk 1", { 100, 100 });
-	auto grp1 = win1->add_group(L"Group 1");
+	auto c1 = win1->add_category(L"CAT1");
 
-	grp1->toggle(&b, L"TOGGLE", []() { LOG("ENABLED"); }, []() { LOG("DISABLED"); });
+	auto s1 = c1->add_section(L"Sec1");
 
-	grp1->button(L"Butt", []() { LOG("Action!"); });
+	auto s2 = c1->add_section(L"Sec2");
 
-	grp1->slider_double(&dub, 0, 200, L"Slider f64: %.1lf", [](const double n)
-	{
-		LOG("dub: %.2f", n);
-	});
 
-	grp1->slider_long(&i32, 0, 200, L"Slider i32: %ld", [](const long n) { LOG("long: %ld", n); });
-
+	// c1->add_section(L"Sec3");
+	// auto c2 =win1->add_category(L"CAT2");
+	// c2->add_section(L"Sec1");
+	// c2->add_section(L"Sec2");
+	// c2->add_section(L"Sec3");
+	// auto c3 = win1->add_category(L"CAT3");
+	// c3->add_section(L"Sec1");
+	// c3->add_section(L"Sec2");
+	// c3->add_section(L"Sec3");
+	//
+	// grp1->toggle(&b, L"TOGGLE", []() { LOG("ENABLED"); }, []() { LOG("DISABLED"); });
+	//
+	// grp1->button(L"Butt", []() { LOG("Action!"); });
+	//
+	// grp1->slider_double(&dub, 0, 200, L"Slider f64: %.1lf", [](const double n)
+	// {
+	// 	LOG("dub: %.2f", n);
+	// });
+	//
+	// grp1->slider_long(&i32, 0, 200, L"Slider i32: %ld", [](const long n) { LOG("long: %ld", n); });
 }
 
 

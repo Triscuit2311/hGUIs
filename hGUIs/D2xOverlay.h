@@ -142,16 +142,7 @@ namespace Renderer {
 		 * @param thickness The thickness of the line.
 		 */
 		void DrawLine(const D2D1_POINT_2F origin, const D2D1_POINT_2F destination, const float thickness) const;
-		
-
-		/**
-		 * @brief Draws a rect with the specified dimensions
-		 *
-		 * @param rect The dimensions of the box.
-		 * @param filled If true, the box is filled with the color; otherwise, an outline of the box is drawn.
-		 * @param stroke The thickness of the outline stroke, if not filled.
-		 */
-		void DrawCustomRect(D2D1_RECT_F rect, bool filled, float stroke) const;
+		void DrawLineC(D2D1_POINT_2F origin, D2D1_POINT_2F destination, float thickness, D2D1_COLOR_F col);
 
 		/**
 		* @brief Draws a solid rect with the specified dimensions, no gradient calculations
@@ -162,14 +153,6 @@ namespace Renderer {
 		*/
 		void DrawSolidRect(D2D1_RECT_F rect, bool filled, float stroke) const;
 
-		/**
-		* @brief Draws a rounded rectangle with the specified dimensions
-		*
-		* @param rect The dimensions and corner radii of the rounded rectangle to draw.
-		* @param filled Whether the rounded rectangle should be filled or not.
-		* @param stroke The thickness of the stroke, if not filled. If 0, no stroke is drawn.
-		*/
-		void DrawCustomRoundedRect(D2D1_ROUNDED_RECT rect, bool filled, float stroke) const;
 
 		/**
 		* @brief Draws a solid rounded rectangle with the specified dimensions, no gradient calculations
@@ -202,6 +185,10 @@ namespace Renderer {
 		* @param stroke The thickness of the ellipse's outline stroke, if not filled.
 		*/
 		void DrawSolidEllipse(D2D1_POINT_2F origin, float width, float height, bool filled, float stroke) const;
+		void DrawCustomRect(D2D1_RECT_F rect, bool filled, float stroke, D2D1_COLOR_F fill_col,
+		                    D2D1_COLOR_F stroke_col);
+		void DrawCustomRoundedRect(D2D1_ROUNDED_RECT rect, bool filled = true, D2D1_COLOR_F fill_col = { 1,1,1,1 }, float stroke = 1,
+		                           D2D1_COLOR_F stroke_col = { 1,1,1,1 });
 
 		void DrawBitmap(D2DBitmapID bitmapId, D2D1_RECT_F rect) const;
 		/**
@@ -213,8 +200,10 @@ namespace Renderer {
 		 * @param origin The origin point where the text should start being drawn.
 		 */
 		void DrawString(WCHAR const* str, UINT32 strLength, const float fontSize, const D2D1_POINT_2F origin);
-		
-		
+		void DrawString(std::wstring str, float fontSize, D2D1_POINT_2F origin);
+		void DrawStringC(std::wstring str, float fontSize, D2D1_POINT_2F origin, D2D1_COLOR_F col);
+
+
 		/**
 		 * @brief Sets the brush mode to use for fill rendering.
 		 *

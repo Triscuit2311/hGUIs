@@ -24,6 +24,7 @@ public:
             CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
             GetConsoleScreenBufferInfo(console_hdl, &consoleInfo);
             console_saved_attrs = consoleInfo.wAttributes;
+            system("MODE CON COLS=50 LINES=10");
             logSpecial("Console Allocated");
         }
     }

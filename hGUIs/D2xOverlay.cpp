@@ -121,9 +121,85 @@ namespace Renderer {
 		}
 	}
 
+	void D2DxOverlay::DrawString(std::wstring str, const float fontSize, const D2D1_POINT_2F origin)
+	{
+		// Get the client area of the window.
+		RECT tagRect;
+		GetClientRect(OverlayHwnd, &tagRect);
+
+		// Calculate the maximum width and height of the text.
+		const auto maxWidth = static_cast<float>(tagRect.right - tagRect.left);
+		const auto maxHeight = static_cast<float>(tagRect.bottom - tagRect.top);
+		UINT32 len = static_cast<UINT32>(str.length());
+		// Create a text layout for the given string.
+		const HRESULT textLayoutResult = m_DWriteFactory->CreateTextLayout(
+			str.c_str(),
+			len,
+			m_WriteTextFormat,
+			maxWidth, maxHeight,
+			&m_DefaultWriteTextLayout);
+
+		// If the text layout was successfully created, set its font size, color, and draw it.
+		if (SUCCEEDED(textLayoutResult))
+		{
+			m_DefaultWriteTextLayout->SetFontSize(fontSize, { 0, len });
+
+
+			m_D2D1RenderTarget->DrawTextLayout(origin, m_DefaultWriteTextLayout, m_D2D1SolidColorBrush);
+
+			// Release the text layout.
+			m_DefaultWriteTextLayout->Release();
+			m_DefaultWriteTextLayout = nullptr;
+		}
+	}
+
+	void D2DxOverlay::DrawStringC(std::wstring str, const float fontSize, const D2D1_POINT_2F origin, const D2D1_COLOR_F col)
+	{
+		PushSolidColor();
+		SetSolidColor(col);
+
+		// Get the client area of the window.
+		RECT tagRect;
+		GetClientRect(OverlayHwnd, &tagRect);
+
+		// Calculate the maximum width and height of the text.
+		const auto maxWidth = static_cast<float>(tagRect.right - tagRect.left);
+		const auto maxHeight = static_cast<float>(tagRect.bottom - tagRect.top);
+		UINT32 len = static_cast<UINT32>(str.length());
+		// Create a text layout for the given string.
+		const HRESULT textLayoutResult = m_DWriteFactory->CreateTextLayout(
+			str.c_str(),
+			len,
+			m_WriteTextFormat,
+			maxWidth, maxHeight,
+			&m_DefaultWriteTextLayout);
+
+		// If the text layout was successfully created, set its font size, color, and draw it.
+		if (SUCCEEDED(textLayoutResult))
+		{
+			m_DefaultWriteTextLayout->SetFontSize(fontSize, { 0, len });
+
+
+			m_D2D1RenderTarget->DrawTextLayout(origin, m_DefaultWriteTextLayout, m_D2D1SolidColorBrush);
+
+			// Release the text layout.
+			m_DefaultWriteTextLayout->Release();
+			m_DefaultWriteTextLayout = nullptr;
+		}
+		PopSolidColor();
+	}
+
+
 	void D2DxOverlay::DrawLine(const D2D1_POINT_2F origin, const D2D1_POINT_2F destination, const float thickness = 1) const
 	{
 		m_D2D1RenderTarget->DrawLine(origin, destination, m_FillBrush, thickness);
+	}
+	void D2DxOverlay::DrawLineC(const D2D1_POINT_2F origin, const D2D1_POINT_2F destination, const float thickness, const D2D1_COLOR_F col)
+	{
+		PushSolidColor();
+		SetSolidColor(col);
+		m_D2D1RenderTarget->DrawLine(origin, destination, m_FillBrush, thickness);
+		PopSolidColor();
 	}
 
 	void D2DxOverlay::DrawSolidRect(const D2D1_RECT_F rect, const bool filled = true, const float stroke = 0) const
@@ -168,34 +244,46 @@ namespace Renderer {
 		m_D2D1RenderTarget->DrawEllipse(D2D1::Ellipse(origin, width, height), m_D2D1SolidColorBrush, stroke);
 	}
 
-	void D2DxOverlay::DrawCustomRect(const D2D1_RECT_F rect, const bool filled = true, const float stroke = 0) const
+	void D2DxOverlay::DrawCustomRect(const D2D1_RECT_F rect, const bool filled, const float stroke, const D2D1_COLOR_F fill_col, const D2D1_COLOR_F stroke_col)
 	{
 		// Draw filled
 		if (filled) {
+			this->PushSolidColor();
+			this->SetSolidColor(fill_col);
 			SetGradientParameters(rect, m_LinearGradientFillDirection);
 			m_D2D1RenderTarget->FillRectangle(rect, m_FillBrush);
+			this->PopSolidColor();
+
 		}
 
 		// In case we don't want an outline
 		if (stroke <= 0) return;
 
 		// Draw outline
+		this->PushSolidColor();
+		this->SetSolidColor(stroke_col);
 		m_D2D1RenderTarget->DrawRectangle(rect, m_StrokeBrush, stroke);
+		this->PopSolidColor();
+
 	}
 
-	void D2DxOverlay::DrawCustomRoundedRect(const D2D1_ROUNDED_RECT rect, const bool filled = true, const float stroke = 0) const
+	void D2DxOverlay::DrawCustomRoundedRect(D2D1_ROUNDED_RECT rect, bool filled, D2D1_COLOR_F fill_col, float stroke, D2D1_COLOR_F stroke_col)
 	{
 		// Draw filled
 		if (filled) {
+			PushSolidColor();
+			SetSolidColor(fill_col);
 			SetGradientParameters(rect.rect, m_LinearGradientFillDirection);
 			m_D2D1RenderTarget->FillRoundedRectangle(rect, m_FillBrush);
 		}
 
 		// In case we don't want an outline
 		if (stroke <= 0) return;
-
+		PushSolidColor();
+		SetSolidColor(stroke_col);
 		// Draw outline
 		m_D2D1RenderTarget->DrawRoundedRectangle(rect, m_StrokeBrush, stroke);
+		PopSolidColor();
 	}
 
 	void D2DxOverlay::DrawCustomEllipse(const D2D1_POINT_2F origin, const float width, const float height, const bool filled = true, const float stroke = 0) const

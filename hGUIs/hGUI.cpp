@@ -13,9 +13,9 @@ namespace h_gui::controls
 	label::label(std::wstring text) : control(), text(std::move(text))
 	{
 		size_ = {
-			h_gui_style::structural::control_width
-			+ (h_gui_style::structural::base::pad * 2),
-			h_gui_style::structural::base::block_height
+			h_style::structural::control_width
+			+ (h_style::structural::base::pad * 2),
+			h_style::structural::base::block_height
 		};
 	}
 
@@ -27,9 +27,9 @@ namespace h_gui::controls
 			gui_manager::renderer->SetSolidColor({1.0, 0, 0, 1});
 		}
 
-		gui_manager::renderer->DrawString(text.c_str(), static_cast<uint32_t>(text.length()),
-		                                  h_gui_style::theme::text::font_size,
-		                                  {origin_.x + h_gui_style::structural::base::margin, origin_.y});
+		gui_manager::renderer->DrawString(text,
+		                                  h_style::theme::text::font_size,
+		                                  {origin_.x + h_style::structural::base::margin, origin_.y});
 
 		if (hovered_)
 		{
@@ -44,9 +44,9 @@ namespace h_gui::controls
 	{
 		state = data;
 		size_ = {
-			h_gui_style::structural::control_width
-			+ (h_gui_style::structural::base::pad * 2),
-			h_gui_style::structural::base::block_height
+			h_style::structural::control_width
+			+ (h_style::structural::base::pad * 2),
+			h_style::structural::base::block_height
 		};
 
 		this->on_enable = globals::invoker->add_func([on_enabled](std::any n) { on_enabled(); });
@@ -57,49 +57,45 @@ namespace h_gui::controls
 	{
 
 		{
-			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(hovered_
-				                                     ? h_gui_style::theme::colors::control::toggle_hovered
-				                                     : h_gui_style::theme::colors::control::toggle);
+
+			D2D1_COLOR_F fill_col = hovered_
+				? h_style::theme::colors::control::toggle_hovered
+				: h_style::theme::colors::control::toggle;
 
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect(
 					{
-						origin_.x + h_gui_style::structural::base::margin,
-						origin_.y + h_gui_style::structural::base::pad,
-						origin_.x + h_gui_style::structural::base::block_height - (h_gui_style::structural::base::pad *
-							2) + h_gui_style::structural::base::margin,
-						origin_.y + size_.y - h_gui_style::structural::base::pad
+						origin_.x + h_style::structural::base::margin,
+						origin_.y + h_style::structural::base::pad,
+						origin_.x + h_style::structural::base::block_height - (h_style::structural::base::pad *
+							2) + h_style::structural::base::margin,
+						origin_.y + size_.y - h_style::structural::base::pad
 					},
-					h_gui_style::theme::border_radius / 2,
-					h_gui_style::theme::border_radius / 2), true, false);
-			gui_manager::renderer->PopSolidColor();
+					h_style::theme::border_radius / 2,
+					h_style::theme::border_radius / 2), true, fill_col, 0);
 
 			if (*state)
 			{
-				gui_manager::renderer->PushSolidColor();
-				gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::control::toggle_marker);
 
 				gui_manager::renderer->DrawCustomRoundedRect(
 					D2D1::RoundedRect(
 						{
-							origin_.x + (h_gui_style::structural::base::margin) + h_gui_style::structural::base::pad,
-							origin_.y + (h_gui_style::structural::base::pad * 2),
-							origin_.x + h_gui_style::structural::base::block_height
-							- (h_gui_style::structural::base::pad * 3) + h_gui_style::structural::base::margin,
-							origin_.y + size_.y - (h_gui_style::structural::base::pad * 2)
+							origin_.x + (h_style::structural::base::margin) + h_style::structural::base::pad,
+							origin_.y + (h_style::structural::base::pad * 2),
+							origin_.x + h_style::structural::base::block_height
+							- (h_style::structural::base::pad * 3) + h_style::structural::base::margin,
+							origin_.y + size_.y - (h_style::structural::base::pad * 2)
 						},
-						h_gui_style::theme::border_radius / 3,
-						h_gui_style::theme::border_radius / 3), true, false);
-				gui_manager::renderer->PopSolidColor();
+						h_style::theme::border_radius / 3,
+						h_style::theme::border_radius / 3), false,{},1, h_style::theme::colors::control::toggle_marker);
 			}
 		}
 
-		gui_manager::renderer->DrawString(label.c_str(), static_cast<uint32_t>(label.length()),
-		                                  h_gui_style::theme::text::font_size,
+		gui_manager::renderer->DrawString(label,
+		                                  h_style::theme::text::font_size,
 		                                  {
-			                                  origin_.x + (h_gui_style::structural::base::margin * 4) + (
-				                                  h_gui_style::structural::base::pad * 2),
+			                                  origin_.x + (h_style::structural::base::margin * 4) + (
+				                                  h_style::structural::base::pad * 2),
 			                                  origin_.y
 		                                  });
 
@@ -119,9 +115,9 @@ namespace h_gui::controls
 	button::button(std::wstring label, const std::function<void()>& action) : control(), label(std::move(label))
 	{
 		size_ = {
-			h_gui_style::structural::control_width
-			+ (h_gui_style::structural::base::pad * 2),
-			h_gui_style::structural::base::block_height * 2
+			h_style::structural::control_width
+			+ (h_style::structural::base::pad * 2),
+			h_style::structural::base::block_height * 2
 		};
 
 		this->action = globals::invoker->add_func([action](std::any n) { action(); });
@@ -129,53 +125,27 @@ namespace h_gui::controls
 
 	blocks_count button::render(uint64_t tick, LPPOINT cursor_pos)
 	{
-		static D2D1_COLOR_F button_color = h_gui_style::theme::colors::control::button;
+		static D2D1_COLOR_F button_color = h_style::theme::colors::control::button;
 
 		{
-			//back
-			gui_manager::renderer->PushSolidColor();
-
-			gui_manager::renderer->SetSolidColor(button_color);
-
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect(
 					{
-						origin_.x + h_gui_style::structural::base::margin,
-						origin_.y + h_gui_style::structural::base::pad + h_gui_style::structural::base::margin,
-						origin_.x + size_.x - h_gui_style::structural::base::pad,
-						origin_.y + size_.y - h_gui_style::structural::base::pad - h_gui_style::structural::base::margin
+						origin_.x + h_style::structural::base::margin,
+						origin_.y + h_style::structural::base::pad + h_style::structural::base::margin,
+						origin_.x + size_.x - h_style::structural::base::pad,
+						origin_.y + size_.y - h_style::structural::base::pad - h_style::structural::base::margin
 					},
-					h_gui_style::theme::border_radius / 2,
-					h_gui_style::theme::border_radius / 2), true, false);
-			gui_manager::renderer->PopSolidColor();
-
-
-			//stroke
-			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::control::button_stroke);
-			gui_manager::renderer->DrawCustomRoundedRect(
-				D2D1::RoundedRect(
-					{
-			origin_.x + h_gui_style::structural::base::margin,
-				origin_.y + h_gui_style::structural::base::pad + h_gui_style::structural::base::margin,
-				origin_.x + size_.x - h_gui_style::structural::base::pad,
-				origin_.y + size_.y - h_gui_style::structural::base::pad - h_gui_style::structural::base::margin
-					},
-					h_gui_style::theme::border_radius / 2,
-					h_gui_style::theme::border_radius / 2), false, true);
-			gui_manager::renderer->PopSolidColor();
+					h_style::theme::border_radius / 2,
+					h_style::theme::border_radius / 2), true, button_color, 1, h_style::theme::colors::control::button_stroke);
 		}
 
 		{
-			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::base::bg);
-
 			//TODO: Center text
-			gui_manager::renderer->DrawString(this->label.c_str(), this->label.length(), h_gui_style::theme::text::font_size, {
-										origin_.x + (h_gui_style::structural::base::margin * 2),
-						origin_.y + h_gui_style::structural::base::pad + h_gui_style::structural::base::margin,
-			});
-			gui_manager::renderer->PopSolidColor();
+			gui_manager::renderer->DrawStringC(label, h_style::theme::text::font_size, {
+										origin_.x + (h_style::structural::base::margin * 2),
+						origin_.y + h_style::structural::base::pad + h_style::structural::base::margin,
+			}, h_style::theme::colors::base::bg);
 		}
 
 
@@ -186,14 +156,14 @@ namespace h_gui::controls
 				globals::invoker->invoke(this->action, std::any{});
 			}else if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
 			{
-				button_color = anim::lerp_colf(button_color, h_gui_style::theme::colors::control::button_pressed, 0.75f);
+				button_color = anim::lerp_colf(button_color, h_style::theme::colors::control::button_pressed, 0.75f);
 			}else
 			{
-				button_color = anim::lerp_colf(button_color, h_gui_style::theme::colors::control::button_hovered, 0.05f);
+				button_color = anim::lerp_colf(button_color, h_style::theme::colors::control::button_hovered, 0.05f);
 			}
 		}else
 		{
-			button_color = anim::lerp_colf(button_color, h_gui_style::theme::colors::control::button, 0.05f);
+			button_color = anim::lerp_colf(button_color, h_style::theme::colors::control::button, 0.05f);
 		}
 
 
@@ -206,9 +176,9 @@ namespace h_gui::controls
 	                                                                             data_(data), min_(min), max_(max), label(std::move(label))
 	{
 		size_ = {
-			h_gui_style::structural::control_width
-			+ (h_gui_style::structural::base::pad * 2),
-			h_gui_style::structural::base::block_height * 2
+			h_style::structural::control_width
+			+ (h_style::structural::base::pad * 2),
+			h_style::structural::base::block_height * 2
 		};
 
 
@@ -242,26 +212,26 @@ namespace h_gui::controls
 				ERR("BAD swprintf on format string (slider_double)");
 			}
 			const std::wstring ws(buff);
-			gui_manager::renderer->DrawString(ws.c_str(), ws.length(),
-			                                  h_gui_style::theme::text::font_size,
-			                                  {origin_.x + h_gui_style::structural::base::margin, origin_.y});
+			gui_manager::renderer->DrawString(ws,
+			                                  h_style::theme::text::font_size,
+			                                  {origin_.x + h_style::structural::base::margin, origin_.y});
 		}
 
 		{
 			// Slider line
 			gui_manager::renderer->PushSolidColor();
 			gui_manager::renderer->SetSolidColor(hovered_
-				                                     ? h_gui_style::theme::colors::control::slider_hovered
-				                                     : h_gui_style::theme::colors::control::slider);
+				                                     ? h_style::theme::colors::control::slider_hovered
+				                                     : h_style::theme::colors::control::slider);
 			gui_manager::renderer->DrawLine(
 				{
-					origin_.x + h_gui_style::structural::base::margin,
-					origin_.y + h_gui_style::structural::base::block_height + (h_gui_style::structural::base::margin *
+					origin_.x + h_style::structural::base::margin,
+					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
 						2)
 				},
 				{
-					origin_.x + size_.x - h_gui_style::structural::base::pad,
-					origin_.y + h_gui_style::structural::base::block_height + (h_gui_style::structural::base::margin *
+					origin_.x + size_.x - h_style::structural::base::pad,
+					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
 						2)
 				},
 				1
@@ -270,24 +240,24 @@ namespace h_gui::controls
 		}
 
 
-		const float min_pos_x = origin_.x + (h_gui_style::structural::base::margin * 2);
-		const float max_pos_x = origin_.x + size_.x - h_gui_style::structural::base::pad -
-			h_gui_style::structural::base::margin;
+		const float min_pos_x = origin_.x + (h_style::structural::base::margin * 2);
+		const float max_pos_x = origin_.x + size_.x - h_style::structural::base::pad -
+			h_style::structural::base::margin;
 
 		{
 			// slider handle
 			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::control::slider_handle);
+			gui_manager::renderer->SetSolidColor(h_style::theme::colors::control::slider_handle);
 			float x_pos = min_pos_x + ((max_pos_x - min_pos_x) * percent_);
 
 			gui_manager::renderer->DrawSolidEllipse(
 				{
 					x_pos,
-					origin_.y + h_gui_style::structural::base::block_height + (h_gui_style::structural::base::margin *
+					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
 						2)
 				},
-				h_gui_style::structural::base::margin,
-				h_gui_style::structural::base::margin,
+				h_style::structural::base::margin,
+				h_style::structural::base::margin,
 				true,
 				0
 			);
@@ -320,9 +290,9 @@ namespace h_gui::controls
 	                                                                       label(std::move(label))
 	{
 		size_ = {
-			h_gui_style::structural::control_width
-			+ (h_gui_style::structural::base::pad * 2),
-			h_gui_style::structural::base::block_height * 2
+			h_style::structural::control_width
+			+ (h_style::structural::base::pad * 2),
+			h_style::structural::base::block_height * 2
 		};
 
 
@@ -356,26 +326,26 @@ namespace h_gui::controls
 				ERR("BAD swprintf on format string (slider_long)");
 			}
 			const std::wstring ws(buff);
-			gui_manager::renderer->DrawString(ws.c_str(), ws.length(),
-			                                  h_gui_style::theme::text::font_size,
-			                                  {origin_.x + h_gui_style::structural::base::margin, origin_.y});
+			gui_manager::renderer->DrawString(ws,
+			                                  h_style::theme::text::font_size,
+			                                  {origin_.x + h_style::structural::base::margin, origin_.y});
 		}
 
 		{
 			// Slider line
 			gui_manager::renderer->PushSolidColor();
 			gui_manager::renderer->SetSolidColor(hovered_
-				                                     ? h_gui_style::theme::colors::control::slider_hovered
-				                                     : h_gui_style::theme::colors::control::slider);
+				                                     ? h_style::theme::colors::control::slider_hovered
+				                                     : h_style::theme::colors::control::slider);
 			gui_manager::renderer->DrawLine(
 				{
-					origin_.x + h_gui_style::structural::base::margin,
-					origin_.y + h_gui_style::structural::base::block_height + (h_gui_style::structural::base::margin *
+					origin_.x + h_style::structural::base::margin,
+					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
 						2)
 				},
 				{
-					origin_.x + size_.x - h_gui_style::structural::base::pad,
-					origin_.y + h_gui_style::structural::base::block_height + (h_gui_style::structural::base::margin *
+					origin_.x + size_.x - h_style::structural::base::pad,
+					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
 						2)
 				},
 				1
@@ -384,24 +354,24 @@ namespace h_gui::controls
 		}
 
 
-		const float min_pos_x = origin_.x + (h_gui_style::structural::base::margin * 2);
-		const float max_pos_x = origin_.x + size_.x - h_gui_style::structural::base::pad -
-			h_gui_style::structural::base::margin;
+		const float min_pos_x = origin_.x + (h_style::structural::base::margin * 2);
+		const float max_pos_x = origin_.x + size_.x - h_style::structural::base::pad -
+			h_style::structural::base::margin;
 
 		{
 			// slider handle
 			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::control::slider_handle);
+			gui_manager::renderer->SetSolidColor(h_style::theme::colors::control::slider_handle);
 			float x_pos = min_pos_x + ((max_pos_x - min_pos_x) * percent_);
 
 			gui_manager::renderer->DrawSolidEllipse(
 				{
 					x_pos,
-					origin_.y + h_gui_style::structural::base::block_height + (h_gui_style::structural::base::margin *
+					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
 						2)
 				},
-				h_gui_style::structural::base::margin,
-				h_gui_style::structural::base::margin,
+				h_style::structural::base::margin,
+				h_style::structural::base::margin,
 				true,
 				0
 			);
@@ -416,7 +386,7 @@ namespace h_gui::controls
 				percent_ = anim::lerp(percent_, (cursor_pos->x - min_pos_x) / (max_pos_x - min_pos_x), 0.9f);
 				percent_ = percent_ < 0 ? 0 : percent_ > 1 ? 1.0f : percent_;
 
-				*this->data_ = min_ + ((max_ - min_) * percent_);
+				*this->data_ = min_ + static_cast<long>(static_cast<float>(max_ - min_) * percent_);
 
 				any_data_.emplace<long>(*this->data_);
 				globals::invoker->invoke(this->on_update_, any_data_);
@@ -428,17 +398,177 @@ namespace h_gui::controls
 	}
 }
 
-// group
+
+
+namespace h_gui {
+
+
+	tab_group::tab_group(std::wstring text) : interactable({ 0,0 }), text(std::move(text))
+	{
+		size_ = {
+h_style::structural::control_width
++ (h_style::structural::base::pad * 2),
+h_style::structural::base::block_height
+		};
+	}
+
+	blocks_count tab_group::render(uint64_t tick, LPPOINT cursor_pos)
+	{
+		gui_manager::renderer->DrawStringC(text,
+			h_style::theme::text::font_size,
+			{ origin_.x + (h_style::structural::base::margin * 4), origin_.y },
+			hovered_ ? h_style::theme::colors::base::fg_hi : h_style::theme::colors::base::fg);
+		return 1;
+	}
+
+
+	section::section(std::wstring text) : interactable({ 0,0 })
+	{
+		this->text = text;
+		size_ = {
+h_style::structural::control_width
++ (h_style::structural::base::pad * 2),
+h_style::structural::base::block_height
+		};
+		this->section_tabs = std::make_shared<tab_group>(text);
+	}
+
+	blocks_count section::render(uint64_t tick, LPPOINT cursor_pos)
+	{
+
+		if (selected_)
+		{
+			gui_manager::renderer->DrawCustomRect(
+				{ origin_.x + h_style::structural::base::margin ,
+					origin_.y,
+					origin_.x + (h_style::structural::base::margin * 2),
+				 origin_.y + h_style::structural::base::margin
+				}, true, 0, { 0,1,0,1 },{});
+		}
+
+		gui_manager::renderer->DrawStringC(text,
+			h_style::theme::text::font_size,
+			{ origin_.x + (h_style::structural::base::margin  * 4), origin_.y },
+			hovered_ ? h_style::theme::colors::base::fg_hi : h_style::theme::colors::base::fg);
+
+
+		return 1;
+	}
+
+	bool section::was_just_selected(LPPOINT cursor_pos)
+	{
+		return is_hovered() && gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN);
+	}
+
+	std::shared_ptr<tab_group> section::get_tab_group_ptr()
+	{
+		return this->section_tabs;
+	}
+
+	void section::set_selected(bool selected)
+	{
+		selected_ = selected;
+	}
+
+
+	category::category(std::wstring text, std::shared_ptr<window> parent) : interactable({ 0,0 }), text(std::move(text))
+	{
+		parent_window = parent;
+		size_ = {
+	h_style::structural::control_width
+	+ (h_style::structural::base::pad * 2),
+	h_style::structural::base::block_height
+		};
+	}
+
+	blocks_count category::render(uint64_t tick, LPPOINT cursor_pos)
+	{
+
+		gui_manager::renderer->DrawStringC(text,
+			h_style::theme::text::font_size,
+			{ origin_.x + h_style::structural::base::margin, origin_.y },
+			hovered_ ? h_style::theme::colors::base::fg_hi : h_style::theme::colors::base::fg);
+
+		blocks_count blocks = 2;
+		
+		for (auto & sec : sections_)
+		{
+			float vert_offset = (blocks * (h_style::structural::base::block_height +
+				h_style::structural::base::pad)) - h_style::structural::base::pad;
+
+			sec->set_origin({ origin_.x + h_style::structural::base::margin, origin_.y + vert_offset });
+
+			if (!enabled_)
+			{
+				sec->disable();
+			}
+			else
+			{
+				sec->enable();
+				if (!hovered_)
+				{
+					sec->set_hovered(false);
+				}
+				else
+				{
+					sec->calc_hovered(cursor_pos);
+					if(sec->was_just_selected(cursor_pos))
+					{
+						parent_window->set_selected_tab_group(sec->get_tab_group_ptr());
+					}
+				}
+			}
+
+			blocks += sec->render(tick, cursor_pos);
+			
+
+		}
+
+		size_.y = blocks * h_style::structural::base::block_height;
+
+
+		return blocks;
+	}
+
+	std::shared_ptr<section> category::add_section(std::wstring text)
+	{
+		std::shared_ptr<section> ptr = std::make_shared<section>(text);
+		this->sections_.emplace_back(ptr);
+		return ptr;
+	}
+
+
+	sidebar_widget::sidebar_widget(std::wstring text) : interactable({0,0}), text(std::move(text))
+	{
+		size_ = {
+	h_style::structural::control_width
+	+ (h_style::structural::base::pad * 2),
+	h_style::structural::base::block_height
+		};
+	}
+
+	blocks_count sidebar_widget::render(uint64_t tick, LPPOINT cursor_pos)
+	{
+		gui_manager::renderer->DrawString(text,
+			h_style::theme::text::font_size,
+			{ origin_.x + h_style::structural::base::margin, origin_.y });
+
+		return 3;
+	}
+
+}
+
+// control_group
 namespace h_gui
 {
-	std::shared_ptr<control> group::label(const std::wstring& text)
+	std::shared_ptr<control> control_group::label(const std::wstring& text)
 	{
 		std::shared_ptr<control> c = std::make_shared<h_gui::controls::label>(text);
 		this->controls_.emplace_back(c);
 		return c;
 	}
 
-	std::shared_ptr<control> group::toggle(bool* data, std::wstring label,
+	std::shared_ptr<control> control_group::toggle(bool* data, std::wstring label,
 	                                       const std::function<void()>& on_enabled,
 	                                       const std::function<void()>& on_disabled)
 	{
@@ -447,7 +577,7 @@ namespace h_gui
 		return c;
 	}
 
-	std::shared_ptr<control> group::slider_double(double* data, double min, double max, std::wstring label,
+	std::shared_ptr<control> control_group::slider_double(double* data, double min, double max, std::wstring label,
 	                                              const std::function<void(double)>& on_update)
 	{
 		std::shared_ptr<control> c = std::make_shared<h_gui::controls::slider_double>(data, min, max, label, on_update);
@@ -455,7 +585,7 @@ namespace h_gui
 		return c;
 	}
 
-	std::shared_ptr<control> group::slider_long(long* data, long min, long max, std::wstring label,
+	std::shared_ptr<control> control_group::slider_long(long* data, long min, long max, std::wstring label,
 	                                            const std::function<void(long)>& on_update)
 	{
 		std::shared_ptr<control> c = std::make_shared<h_gui::controls::slider_long>(data, min, max, label, on_update);
@@ -463,37 +593,38 @@ namespace h_gui
 		return c;
 	}
 
-	std::shared_ptr<control> group::button(std::wstring label, const std::function<void()>& action)
+	std::shared_ptr<control> control_group::button(std::wstring label, const std::function<void()>& action)
 	{
 		std::shared_ptr<control> c = std::make_shared<h_gui::controls::button>(label, action);
 		this->controls_.emplace_back(c);
 		return c;
 	}
 
-	blocks_count group::render(uint64_t tick, LPPOINT cursor_pos)
+
+	blocks_count control_group::render(uint64_t tick, LPPOINT cursor_pos)
 	{
 		size_ = {
-			h_gui_style::structural::control_width
-			+ (h_gui_style::structural::base::margin * 2)
-			+ (h_gui_style::structural::base::pad * 2),
-			(blocks_ * (h_gui_style::structural::base::block_height + h_gui_style::structural::base::pad))
-			+ h_gui_style::structural::base::margin
+			h_style::structural::control_width
+			+ (h_style::structural::base::margin * 2)
+			+ (h_style::structural::base::pad * 2),
+			(blocks_ * (h_style::structural::base::block_height + h_style::structural::base::pad))
+			+ h_style::structural::base::margin
 		};
 
 
-		gui_manager::renderer->DrawString(label_.c_str(), label_.length(),
-		                                  h_gui_style::theme::text::font_size,
+		gui_manager::renderer->DrawString(label_,
+		                                  h_style::theme::text::font_size,
 		                                  {
-			                                  origin_.x + (h_gui_style::structural::base::margin * 2) +
-			                                  h_gui_style::structural::base::pad,
+			                                  origin_.x + (h_style::structural::base::margin * 2) +
+			                                  h_style::structural::base::pad,
 			                                  origin_.y
 		                                  });
 		// Border
 		{
-			auto border_color = h_gui_style::theme::colors::group::border;
+			auto border_color = h_style::theme::colors::group::border;
 			if (hovered_ && enabled_)
 			{
-				border_color = h_gui_style::theme::colors::group::border_hovered;
+				border_color = h_style::theme::colors::group::border_hovered;
 			}
 			gui_manager::renderer->PushSolidColor();
 			gui_manager::renderer->SetSolidColor(border_color);
@@ -501,53 +632,53 @@ namespace h_gui
 
 			gui_manager::renderer->DrawLine(
 				{
-					origin_.x + h_gui_style::structural::base::margin,
-					origin_.y + (h_gui_style::theme::text::font_size - h_gui_style::structural::base::margin)
+					origin_.x + h_style::structural::base::margin,
+					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
 				},
 				{
-					origin_.x + (h_gui_style::structural::base::margin * 2),
-					origin_.y + (h_gui_style::theme::text::font_size - h_gui_style::structural::base::margin)
+					origin_.x + (h_style::structural::base::margin * 2),
+					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
 				}, 1);
 
 			gui_manager::renderer->DrawLine(
 				{
-					origin_.x + h_gui_style::structural::base::margin,
-					origin_.y + (h_gui_style::theme::text::font_size - h_gui_style::structural::base::margin)
+					origin_.x + h_style::structural::base::margin,
+					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
 				},
 				{
-					origin_.x + (h_gui_style::structural::base::margin),
-					origin_.y + size_.y - h_gui_style::structural::base::margin
+					origin_.x + (h_style::structural::base::margin),
+					origin_.y + size_.y - h_style::structural::base::margin
 				}, 1);
 
 			gui_manager::renderer->DrawLine(
 				{
-					origin_.x + (h_gui_style::structural::base::margin),
-					origin_.y + size_.y - h_gui_style::structural::base::margin
+					origin_.x + (h_style::structural::base::margin),
+					origin_.y + size_.y - h_style::structural::base::margin
 				},
 				{
 					origin_.x + size_.x,
-					origin_.y + size_.y - h_gui_style::structural::base::margin
-				}, 1);
-
-			gui_manager::renderer->DrawLine(
-				{
-					origin_.x + size_.x,
-					origin_.y + size_.y - h_gui_style::structural::base::margin
-				},
-				{
-					origin_.x + size_.x,
-					origin_.y + (h_gui_style::theme::text::font_size - h_gui_style::structural::base::margin)
+					origin_.y + size_.y - h_style::structural::base::margin
 				}, 1);
 
 			gui_manager::renderer->DrawLine(
 				{
 					origin_.x + size_.x,
-					origin_.y + (h_gui_style::theme::text::font_size - h_gui_style::structural::base::margin)
+					origin_.y + size_.y - h_style::structural::base::margin
 				},
 				{
-					origin_.x + (h_gui_style::structural::base::margin * 2) + (h_gui_style::theme::text::get_text_width(
+					origin_.x + size_.x,
+					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
+				}, 1);
+
+			gui_manager::renderer->DrawLine(
+				{
+					origin_.x + size_.x,
+					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
+				},
+				{
+					origin_.x + (h_style::structural::base::margin * 2) + (h_style::theme::text::get_text_width(
 						label_.length())),
-					origin_.y + (h_gui_style::theme::text::font_size - h_gui_style::structural::base::margin)
+					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
 				}, 1);
 
 
@@ -558,10 +689,10 @@ namespace h_gui
 
 		for (auto& ctrl : controls_)
 		{
-			float vert_offset = (blocks_ * (h_gui_style::structural::base::block_height +
-				h_gui_style::structural::base::pad)) - h_gui_style::structural::base::pad;
+			float vert_offset = (blocks_ * (h_style::structural::base::block_height +
+				h_style::structural::base::pad)) - h_style::structural::base::pad;
 
-			ctrl->set_origin({origin_.x + h_gui_style::structural::base::margin, origin_.y + vert_offset});
+			ctrl->set_origin({origin_.x + h_style::structural::base::margin, origin_.y + vert_offset});
 
 
 			if (!enabled_)
@@ -603,8 +734,8 @@ namespace h_gui
 			hovered_ = false;
 			return;
 		}
-		this->rel_cursor_->x = cursor_pos->x - origin_.x;
-		this->rel_cursor_->y = cursor_pos->x - origin_.x;
+		this->rel_cursor_->x = cursor_pos->x - static_cast<long>(origin_.x);
+		this->rel_cursor_->y = cursor_pos->x - static_cast<long>(origin_.x);
 		hovered_ = true;
 	}
 
@@ -628,6 +759,11 @@ namespace h_gui
 	void interactable::disable()
 	{
 		enabled_ = false;
+	}
+
+	bool interactable::is_hovered()
+	{
+		return hovered_;
 	}
 }
 
@@ -659,206 +795,86 @@ namespace h_gui
 {
 	blocks_count h_gui::window::render(uint64_t tick, LPPOINT cursor_pos)
 	{
-		static D2D1_COLOR_F accent_color = h_gui_style::theme::colors::base::accent_a;
+		static D2D1_COLOR_F accent_color = h_style::theme::colors::base::accent_a;
 
 		if (!enabled_) { return 0; }
-
-
-		gui_manager::renderer->PushSolidColor();
-		gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::base::fg);
-
-
 		{
-			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::base::bg);
-			gui_manager::renderer->SetFillBrushMode(Renderer::D2DxOverlay::SOLID);
-			gui_manager::renderer->DrawSolidRect(
-				{ origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y },
-				 true, false);
-			gui_manager::renderer->PopSolidColor();
-
-
-			// Border
-			{
-				gui_manager::renderer->PushSolidColor();
-				gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::window::border);
-				gui_manager::renderer->DrawSolidRect(
-				{ origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y },false, true);
-				gui_manager::renderer->DrawLine(
-					{ origin_.x, origin_.y + (h_gui_style::structural::base::block_height * 2) - h_gui_style::structural::base::margin },
-					{ origin_.x + size_.x, origin_.y + (h_gui_style::structural::base::block_height * 2) - h_gui_style::structural::base::margin },
-					h_gui_style::theme::border_stroke);
-				gui_manager::renderer->PopSolidColor();
-			}
-
-
-			//border accents
-			{
-				const float thickness = h_gui_style::structural::base::pad;
-				const float half_thick = thickness / 2;
-				const float length = h_gui_style::structural::base::margin;
-
-				gui_manager::renderer->PushSolidColor();
-				gui_manager::renderer->SetSolidColor(accent_color);
-
-				//TL
-				gui_manager::renderer->DrawSolidRect(
-					{
-						origin_.x -half_thick,
-						origin_.y - half_thick,
-						origin_.x + length,
-						origin_.y + half_thick
-					}, true, false);
-				gui_manager::renderer->DrawSolidRect(
-					{
-						origin_.x - half_thick,
-						origin_.y - half_thick,
-						origin_.x + half_thick,
-						origin_.y + length
-
-					}, true, false);
-
-
-				//TR
-				gui_manager::renderer->DrawSolidRect(
-					{
-						origin_.x + size_.x - length,
-						origin_.y - half_thick,
-						origin_.x + size_.x + half_thick,
-						origin_.y + half_thick
-					}, true, false);
-				gui_manager::renderer->DrawSolidRect(
-					{
-						origin_.x + size_.x - half_thick,
-						origin_.y - half_thick,
-						origin_.x + size_.x + half_thick,
-						origin_.y + length
-
-					}, true, false);
-
-
-				//BL
-				gui_manager::renderer->DrawSolidRect(
-					{
-						origin_.x - half_thick,
-						origin_.y + size_.y - half_thick,
-						origin_.x + length,
-						origin_.y + size_.y + half_thick
-					}, true, false);
-				gui_manager::renderer->DrawSolidRect(
-					{
-						origin_.x - half_thick,
-						origin_.y + size_.y - half_thick,
-						origin_.x + half_thick,
-						origin_.y + size_.y - length
-
-					}, true, false);
-
-				//BR
-				gui_manager::renderer->DrawSolidRect(
-					{
-						origin_.x + size_.x - length,
-						origin_.y + size_.y - half_thick,
-						origin_.x + size_.x + half_thick,
-						origin_.y + size_.y + half_thick
-					}, true, false);
-				gui_manager::renderer->DrawSolidRect(
-					{
-						origin_.x + size_.x - half_thick,
-						origin_.y + size_.y - half_thick,
-						origin_.x + size_.x + half_thick,
-						origin_.y + size_.y - length
-
-					}, true, false);
-
-
-				gui_manager::renderer->PopSolidColor();
-			}
-
-
-
-
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect({ origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y },
+					h_style::theme::border_radius,
+					h_style::theme::border_radius),
+				 true, h_style::theme::colors::base::bg, 1, h_style::theme::colors::window::border);
 		}
 
-		// gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::base::bg);
-		// gui_manager::renderer->SetFillBrushMode(Renderer::D2DxOverlay::SOLID);
-		// gui_manager::renderer->DrawCustomRoundedRect(
-		// 	D2D1::RoundedRect({origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y},
-		// 	                  h_gui_style::theme::border_radius,
-		// 	                  h_gui_style::theme::border_radius), true, false);
-		//
-		//
-		// gui_manager::renderer->SetSolidColor(h_gui_style::theme::colors::base::fg);
-		// gui_manager::renderer->DrawLine(
-		// 	{origin_.x, origin_.y + h_gui_style::structural::base::block_height},
-		// 	{origin_.x + size_.x, origin_.y + h_gui_style::structural::base::block_height},
-		// 	h_gui_style::theme::border_stroke);
-		//
-		// // Border
-		// {
-		// 	auto border_color = h_gui_style::theme::colors::window::border;
-		// 	if (hovered_)
-		// 	{
-		// 		border_color = h_gui_style::theme::colors::window::border_hovered;
-		// 	}
-		// 	gui_manager::renderer->PushSolidColor();
-		// 	gui_manager::renderer->SetSolidColor(border_color);
-		// 	gui_manager::renderer->DrawCustomRoundedRect(
-		// 		D2D1::RoundedRect({origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y},
-		// 		                  h_gui_style::theme::border_radius,
-		// 		                  h_gui_style::theme::border_radius), false, true);
-		// 	gui_manager::renderer->PopSolidColor();
-		// }
 
-		gui_manager::renderer->DrawString(title_.c_str(), title_.length(),
-		                                  h_gui_style::theme::text::font_size,
+		gui_manager::renderer->DrawStringC(title_,
+		                                  h_style::theme::text::font_size,
 		                                  {
-		                                  	origin_.x + (h_gui_style::structural::base::margin * 2),
-		                                  	origin_.y + (h_gui_style::structural::base::margin * 2)
-		                                  });
+		                                  	origin_.x + (h_style::structural::base::margin * 2),
+		                                  	origin_.y + (h_style::structural::base::margin * 2)
+		                                  }, h_style::theme::colors::base::fg);
 
-		uint16_t blocks_ct = 2;
-		for (const auto& grp : groups_)
+		uint16_t blocks_ct = 2; // for the window top bar
+		//TODO: Render top bar seperator
+
+		//TODO: render top widget
+		//TODO: Render seperator
+
+		for (const auto& cat : categories_)
 		{
-			float vert_offset = (blocks_ct * (h_gui_style::structural::base::block_height +
-					h_gui_style::structural::base::pad)) +
-				h_gui_style::structural::base::pad;
-			grp->set_origin({origin_.x + h_gui_style::structural::base::pad, origin_.y + vert_offset});
+			float vert_offset = (blocks_ct * (h_style::structural::base::block_height +
+					h_style::structural::base::pad)) +
+				h_style::structural::base::pad;
+			cat->set_origin({origin_.x + h_style::structural::base::pad, origin_.y + vert_offset});
 
 			if(being_dragged)
 			{
-				grp->disable();
+				cat->disable();
 			}else
 			{
-				grp->enable();
+				cat->enable();
+
+				if (!hovered_)
+				{
+					cat->set_hovered(false);
+				}
+				else
+				{
+					cat->calc_hovered(cursor_pos);
+				}
 			}
 
-			if (!hovered_)
-			{
-				grp->set_hovered(false);
-			}
-			else
-			{
-				grp->calc_hovered(cursor_pos);
-			}
+			blocks_ct += cat->render(tick, cursor_pos);
 
-			blocks_ct += grp->render(tick, cursor_pos);
+			//TODO: Render seperator
+		}
+		//TODO: Render BOTTOM WIDGET
+
+
+		if(this->selected_section_tabs != nullptr)
+		{
+			this->selected_section_tabs->set_origin(
+				{ origin_.x + h_style::structural::control_width + h_style::structural::base::margin,
+					origin_.y + h_style::structural::control_width + h_style::structural::base::margin
+				});
+
+			this->selected_section_tabs->render(tick, cursor_pos);
+			gui_manager::renderer->DrawCustomRect(
+				{ origin_.x + h_style::structural::base::margin ,
+					origin_.y,
+					origin_.x + (h_style::structural::base::margin * 2),
+				 origin_.y + h_style::structural::base::margin
+				}, true, 0, { 0,1,0,1 }, {});
 		}
 
 
-		// Pop FG
-		gui_manager::renderer->PopSolidColor();
 
 
-		size_ = {
-			size_.x, (blocks_ct * (h_gui_style::structural::base::block_height + h_gui_style::structural::base::pad)) +
-			h_gui_style::structural::base::pad + (h_gui_style::structural::base::margin * 2)
-		};
-
+		// Handle Dragging
 		if (hovered_ || being_dragged)
 		{
-			accent_color = anim::lerp_colf(accent_color, h_gui_style::theme::colors::base::accent_b, 0.025f);
-			if (cursor_pos->y < origin_.y + h_gui_style::structural::base::block_height || being_dragged)
+			accent_color = anim::lerp_colf(accent_color, h_style::theme::colors::base::accent_b, 0.025f);
+			if (cursor_pos->y < origin_.y + h_style::structural::base::block_height || being_dragged)
 			{
 				if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
 				{
@@ -884,18 +900,25 @@ namespace h_gui
 			}
 		}else
 		{
-			accent_color = anim::lerp_colf(accent_color, h_gui_style::theme::colors::base::accent_a, 0.025f);
+			accent_color = anim::lerp_colf(accent_color, h_style::theme::colors::base::accent_a, 0.025f);
 		}
 
 
 		return blocks_ct;
 	}
 
-	std::shared_ptr<group> window::add_group(const std::wstring& label)
+	std::shared_ptr<category> window::add_category(const std::wstring& label)
 	{
-		std::shared_ptr<group> g = std::make_shared<group>(label, false, true, true);
-		this->groups_.emplace_back(g);
-		return g;
+		std::shared_ptr<category> ptr = std::make_shared<category>(label, shared_from_this() );
+		
+		this->categories_.emplace_back(ptr);
+		return ptr;
+	}
+
+	void window::set_selected_tab_group(std::shared_ptr<tab_group> tabs)
+	{
+		LOG("set_selected_tab_group called, tabs: %s",tabs == nullptr? "null" : "good");
+		this->selected_section_tabs = tabs;
 	}
 }
 
@@ -945,6 +968,7 @@ namespace h_gui
 	{
 		h_gui::gui_manager::renderer = renderer;
 		h_gui::gui_manager::input = input_manager;
+		gui_manager::renderer->SetSolidColor(h_style::theme::colors::base::fg);
 	}
 
 	gui_manager::~gui_manager()

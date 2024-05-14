@@ -1,5 +1,5 @@
 #pragma once
-namespace h_gui_style
+namespace h_style
 {
 	namespace structural
 	{
@@ -63,8 +63,9 @@ namespace h_gui_style
 			}
 			namespace base
 			{
-				constexpr D2D1_COLOR_F bg{0.2f, 0.2f, 0.2f, 0.6f};
-				constexpr D2D1_COLOR_F fg{0.8f, 0.8f, 0.8f, 0.9f};
+				constexpr D2D1_COLOR_F bg {rgb_to_color_f(28,31,31,0.2f)};
+				constexpr D2D1_COLOR_F fg {rgb_to_color_f(179,180,181,1.0f)};
+				constexpr D2D1_COLOR_F fg_hi{1,1,1,1};
 
 
 				constexpr D2D1_COLOR_F accent_a = rgb_to_color_f(255, 201, 74, 1.0f);

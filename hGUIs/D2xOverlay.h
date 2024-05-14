@@ -36,7 +36,6 @@ namespace Renderer {
 		const std::wstring WindowClassName = L"d2cls";
 		const std::wstring FontName = L"Lucida Console";
 		
-
 		static D2DxOverlay* Instance; // Singleton instance
 
 		// Windows flags used for creating the overlay window
@@ -107,7 +106,7 @@ namespace Renderer {
 		void PopRadialColor();
 
 
-
+		static inline std::atomic_bool exit = false;
 		static HWND EnumHwnd;
 		static DirectOverlayCallback DrawLoopCallback;
 		HWND GetTargetHwndRef() const;

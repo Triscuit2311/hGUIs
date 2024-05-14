@@ -12,9 +12,12 @@ Renderer::D2DBitmapID splash_img;
 bool b;
 double dub = 99.0;
 long i32 = 123;
-bool show_menu = false;
 
 
+bool show_menu = true;
+bool use_desktop_blur = false;
+bool block_inputs_in_menu = true;
+bool exit_thread = false;
 
 // Runs once at start-time, initializes all the windows, groups and controls for the GUI
 void setup_gui(std::shared_ptr<h_gui::workspace> ws)
@@ -55,11 +58,18 @@ void load_resources(Renderer::D2DxOverlay* renderer)
 // Executed once per frame, before any rendering
 void pre_render(std::shared_ptr<DiInputManager> inputs, Renderer::D2DxOverlay* renderer)
 {
+	if (inputs->IsInputJustReleased(DiInputManager::vKb_END))
+	{
+		Renderer::D2DxOverlay::exit = true;
+		exit_thread = true;
+	}
+
+
 	if (inputs->IsInputJustReleased(DiInputManager::vKb_INSERT))
 	{
 		show_menu = !show_menu;
-		renderer->ToggleAcrylicEffect(show_menu);
-		renderer->SetInputInterception(show_menu);
+		if (use_desktop_blur) { renderer->ToggleAcrylicEffect(show_menu); }
+		if (block_inputs_in_menu) { renderer->SetInputInterception(show_menu); }
 	}
 }
 
@@ -158,6 +168,8 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 {
 	Renderer::RunOverlayThread(render_tick);
 
-	while (true) { std::this_thread::sleep_for(std::chrono::seconds(1)); }
+	while (!exit_thread) { std::this_thread::sleep_for(std::chrono::seconds(1)); }
+	h_gui::globals::invoker->stop();
+
 	return 0;
 }

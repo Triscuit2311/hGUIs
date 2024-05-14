@@ -1003,7 +1003,7 @@ namespace h_gui
 
 	void async_invoker::stop()
 	{
-		thread_exit_signal_ = true;
+		thread_exit_signal_.store(true);
 		invoke_thread_.join();
 		thread_spawned_ = false;
 	}

@@ -19,9 +19,6 @@
     <Filter Include="Framework\hGUI">
       <UniqueIdentifier>{ce7e79cb-600a-47fa-98e4-1e73ae2bd385}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Framework\NewFilter1">
-      <UniqueIdentifier>{2dfbe8da-52a4-4361-9795-aac0f8c65c66}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Framework\Dx">
       <UniqueIdentifier>{a68f4bfe-f4b0-48e8-a7d0-2375594112d5}</UniqueIdentifier>
     </Filter>

@@ -699,11 +699,6 @@ namespace Renderer {
 			}
 			UpdateWindow(OverlayHwnd);
 
-			if (GetAsyncKeyState(VK_END) & 1)
-			{
-				return false;
-			}
-
 			// Start render
 			m_D2D1RenderTarget->BeginDraw();
 			m_D2D1RenderTarget->Clear(D2D1::ColorF(0, 0, 0, 0));
@@ -802,7 +797,7 @@ namespace Renderer {
 		INF("Dx Setup complete, starting render loop");
 
 		// Enter the rendering loop
-		while (d2.RenderLoop()) {}
+		while (d2.RenderLoop() && !D2DxOverlay::exit) {}
 
 		LOG("Dx Renderer Exited");
 

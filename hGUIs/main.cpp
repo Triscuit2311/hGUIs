@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include "animations.hpp"
 #include "D2xOverlay.h"
 #include "DiInputManager.h"
 #include "hGUI.h"
@@ -23,6 +24,7 @@ bool exit_thread = false;
 void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 {
 	auto win1 = ws->add_window(L"windonk 1", { 100, 100 });
+
 	auto c1 = win1->add_category(L"CAT1");
 
 	auto s1 = c1->add_section(L"Sec1");
@@ -31,8 +33,23 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 	auto t3 = s1->add_tab(L"TAB3");
 
 	auto s2 = c1->add_section(L"Sec2");
-	auto t4 = s2->add_tab(L"TAB4");
+	auto t4 = s2->add_tab(L"TAB1");
+	auto t5 = s2->add_tab(L"TAB2");
 
+
+
+	auto c2 = win1->add_category(L"CAT2");
+
+	auto s3 = c2->add_section(L"Sec1");
+	auto _t1 = s3->add_tab(L"TAB1");
+	auto _t2 = s3->add_tab(L"TAB2");
+	auto _t3 = s3->add_tab(L"TAB3");
+	auto _t4 = s3->add_tab(L"TAB4");
+	auto _t5 = s3->add_tab(L"TAB5");
+	auto _t6 = s3->add_tab(L"TAB6");
+	auto _t7 = s3->add_tab(L"TAB7");
+	auto _t8 = s3->add_tab(L"TAB8");
+	auto _t9 = s3->add_tab(L"TAB9");
 
 
 	// c1->add_section(L"Sec3");
@@ -111,11 +128,24 @@ void render_gui(UINT32 width, UINT32 height, LPPOINT cur_pos)
 // Draw directly to the screen ON TOP of the main GUI
 void render_direct_post(UINT32 width, UINT32 height, LPPOINT cur_pos, const Renderer::D2DxOverlay* renderer)
 {
-	// renderer->DrawBitmap(splash_img,
-	// 	{
-	// 		width / 2.0f - 128.0f, height / 2.0f - 128.0f, width / 2.0f + 128.0f,
-	// 		height / 2.0f + 128.0f
-	// 	});
+	// Splash Screen
+	{
+		static float target_opac = 1.1f;
+		static float curr_opac = 0.0f;
+		static float alpha = 0.01f;
+		if (curr_opac < -0.1f) { return; }
+		curr_opac = anim::lerp(curr_opac, target_opac, alpha);
+		if (curr_opac > 1.0f)
+		{
+			target_opac = -2.f;
+
+		}
+		renderer->DrawBitmap(splash_img,
+			{
+				width / 2.0f - 128.0f, height / 2.0f - 128.0f, width / 2.0f + 128.0f,
+				height / 2.0f + 128.0f
+			}, curr_opac);
+	}
 }
 
 // Executed once per frame, after all rendering is complete
@@ -144,6 +174,9 @@ void init_once(Renderer::D2DxOverlay*& renderer, std::shared_ptr<DiInputManager>
 
 		// Spawn invoke thread after func map is populated
 		h_gui::globals::invoker->run();
+
+		if (use_desktop_blur) { renderer->ToggleAcrylicEffect(show_menu); }
+		if (block_inputs_in_menu) { renderer->SetInputInterception(show_menu); }
 
 		////
 		once = true;

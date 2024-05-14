@@ -80,7 +80,7 @@ namespace h_style
 			}
 			namespace base
 			{
-				constexpr D2D1_COLOR_F bg {rgb_to_color_f(28,31,31,0.2f)};
+				constexpr D2D1_COLOR_F bg {rgb_to_color_f(28,31,31,1.0f)};
 				constexpr D2D1_COLOR_F fg {rgb_to_color_f(179,180,181,1.0f)};
 				constexpr D2D1_COLOR_F fg_hi{1,1,1,1};
 
@@ -101,6 +101,7 @@ namespace h_style
 				constexpr D2D1_COLOR_F border{0.4f, 0.4f, 0.4f, 0.7f};
 				constexpr D2D1_COLOR_F border_hovered{0.9f, 0.9f, 0.9f, 1.0f};
 			}
+
 
 			namespace control
 			{

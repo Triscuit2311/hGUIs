@@ -411,6 +411,28 @@ namespace h_gui
 
 	blocks_count tab::render(uint64_t tick, LPPOINT cursor_pos)
 	{
+		gui_manager::renderer->DrawCustomRect(
+			{
+				origin_.x,
+				origin_.y,
+				origin_.x + size_.x,
+				origin_.y + size_.y
+			}, true, 0, { 1, 1, 0, 1 }, {});
+
+		gui_manager::renderer->DrawStringC(text, h_style::theme::text::font_size, { origin_.x + (size_.x/2), origin_.y + (size_.y /2)}
+			, { 0,0,0,1 });
+
+
+
+
+
+
+
+
+
+
+
+
 		return 0;
 	}
 
@@ -429,9 +451,8 @@ namespace h_gui
 	tab_group::tab_group(std::wstring text) : interactable({0, 0}), text(std::move(text))
 	{
 		size_ = {
-			h_style::structural::control_width
-			+ (h_style::structural::base::pad * 2),
-			h_style::structural::base::block_height
+			h_style::structural::window::control_groups_width,
+			h_style::structural::window::control_groups_height + h_style::structural::window::tab_select_height
 		};
 	}
 
@@ -443,13 +464,103 @@ namespace h_gui
 		                                   hovered_
 			                                   ? h_style::theme::colors::base::fg_hi
 			                                   : h_style::theme::colors::base::fg);
-		return 1;
+
+		gui_manager::renderer->DrawCustomRect(
+			{
+				origin_.x,
+				origin_.y,
+				origin_.x + size_.x,
+				origin_.y + size_.y
+			}, true, 0, { 0, 1, 0, 1 }, {});
+
+
+		float tab_width = h_style::structural::window::control_groups_width / tabs_.size();
+		int i = 0;
+		std::shared_ptr<tab> select_next = nullptr;
+		for (auto& tab: tabs_)
+		{
+			// draw tab select
+			{
+				D2D1_RECT_F tab_rect = { origin_.x + (tab_width * i) + h_style::structural::base::margin,
+					origin_.y,
+					origin_.x + (tab_width * i) + tab_width - h_style::structural::base::margin,
+					origin_.y + h_style::structural::window::tab_select_height };
+				D2D1_POINT_2F text_origin = { origin_.x + (tab_width * i) + h_style::structural::base::pad + h_style::structural::base::margin,
+						origin_.y,
+				};
+
+				if (tab != this->selected_tab_) {
+					bool select_hovered = cursor_pos->x < tab_rect.right && cursor_pos->x > tab_rect.left && cursor_pos->y > tab_rect.top && cursor_pos->y < tab_rect.bottom;
+
+					D2D1_COLOR_F hov = { 1,0,1,1 };
+					D2D1_COLOR_F no_hov = { 0,0,1,1 };
+
+
+					gui_manager::renderer->DrawCustomRect(
+						tab_rect, true, 0, select_hovered ? hov : no_hov, {});
+
+					gui_manager::renderer->DrawStringC(tab->text, h_style::theme::text::font_size,
+						text_origin, { 0,1,1,1 });
+					if (select_hovered && gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
+					{
+						select_next = tab;
+					}
+				}
+				else
+				{
+					gui_manager::renderer->DrawCustomRect(
+						tab_rect, true, 0, { 1,0,0,1 }, {});
+
+					gui_manager::renderer->DrawStringC(tab->text, h_style::theme::text::font_size, text_origin
+						, { 0,1,1,1 });
+				}
+			}
+
+			++i;
+
+			// only render selected tab contents
+			if (tab != this->selected_tab_) { tab->disable(); continue; }
+
+			// just under the tab select area
+			tab->set_origin({ origin_.x, origin_.y + h_style::structural::window::tab_select_height });
+			if (!enabled_)
+			{
+				tab->disable();
+			}
+			else
+			{
+				tab->enable();
+				if (!hovered_)
+				{
+					tab->set_hovered(false);
+				}
+				else
+				{
+					tab->calc_hovered(cursor_pos);
+				}
+			}
+
+			tab->render(tick, cursor_pos);
+		}
+
+		// set next selected tab if tab was selected
+		if(select_next != nullptr)
+		{
+			this->selected_tab_ = select_next;
+		}
+
+		return 0;
 	}
 
 	std::shared_ptr<tab> tab_group::add_tab(std::wstring label)
 	{
 		std::shared_ptr<tab> ptr = std::make_shared<tab>(label);
 		this->tabs_.emplace_back(ptr);
+		if(this->selected_tab_ == nullptr)
+		{
+			this->selected_tab_ = ptr;
+		}
+
 		return ptr;
 	}
 }
@@ -474,9 +585,9 @@ namespace h_gui
 		{
 			gui_manager::renderer->DrawCustomRect(
 				{
-					origin_.x + h_style::structural::base::margin,
+					origin_.x,
 					origin_.y,
-					origin_.x + (h_style::structural::base::margin * 2),
+					origin_.x + h_style::structural::base::margin,
 					origin_.y + h_style::structural::base::margin
 				}, true, 0, {0, 1, 0, 1}, {});
 		}
@@ -567,7 +678,6 @@ namespace h_gui
 				h_style::structural::base::pad)) - h_style::structural::base::pad;
 
 			sec->set_origin({origin_.x + h_style::structural::base::margin, origin_.y + vert_offset});
-
 			sec->set_selected(selected_section == sec);
 
 			if (!enabled_)
@@ -683,12 +793,15 @@ namespace h_gui
 			auto tab_grp = this->currently_selected_section->get_tab_group_ptr();
 			tab_grp->set_origin(
 				{
-					origin_.x + h_style::structural::control_width + h_style::structural::base::margin,
-					origin_.y + h_style::structural::control_width + h_style::structural::base::margin
+					origin_.x + h_style::structural::window::side_bar_width,
+					origin_.y + h_style::structural::window::top_bar_height
 				});
 			tab_grp->render(tick, cursor_pos);
 		}
 
+
+		//TODO: render shadows
+		//TODO: render area seperators on top of shadows
 
 		// Handle Dragging
 		if (hovered_ || being_dragged)

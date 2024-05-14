@@ -234,9 +234,9 @@ namespace h_gui
 
 	class tab : public interactable, public renderable
 	{
-		std::wstring text;
 		std::vector<std::shared_ptr<control_group>> groups_;
 	public:
+		std::wstring text;
 		tab(std::wstring text);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		std::shared_ptr<control_group> add_group(std::wstring label);
@@ -246,6 +246,7 @@ namespace h_gui
 	{
 		std::wstring text;
 		std::vector<std::shared_ptr<tab>> tabs_;
+		std::shared_ptr<tab> selected_tab_ = nullptr;
 	public:
 		tab_group(std::wstring text);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;

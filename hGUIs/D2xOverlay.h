@@ -190,7 +190,7 @@ namespace Renderer {
 		void DrawCustomRoundedRect(D2D1_ROUNDED_RECT rect, bool filled = true, D2D1_COLOR_F fill_col = { 1,1,1,1 }, float stroke = 1,
 		                           D2D1_COLOR_F stroke_col = { 1,1,1,1 });
 
-		void DrawBitmap(D2DBitmapID bitmapId, D2D1_RECT_F rect) const;
+		void DrawBitmap(D2DBitmapID bitmapId, D2D1_RECT_F rect, float opacity = 1.0f) const;
 		/**
 		 * @brief Draws a string of text with the specified font size, origin
 		 *

@@ -80,13 +80,13 @@ namespace Renderer {
 // Public Drawing
 namespace Renderer {
 
-	void D2DxOverlay::DrawBitmap(const D2DBitmapID bitmapId, const D2D1_RECT_F rect) const
+	void D2DxOverlay::DrawBitmap(const D2DBitmapID bitmapId, const D2D1_RECT_F rect, float opacity) const
 	{
 		if (bitmapId < 0 || bitmapId >= m_BitmapLibrary.size()) {
 			ERR("Bad Bitmap ID: %lu", bitmapId);
 			return;
 		}
-		m_D2D1RenderTarget->DrawBitmap(m_BitmapLibrary.at(bitmapId), rect);
+		m_D2D1RenderTarget->DrawBitmap(m_BitmapLibrary.at(bitmapId), rect, opacity);
 	}
 
 	void D2DxOverlay::DrawString(WCHAR const* str, const UINT32 strLength, const float fontSize, const D2D1_POINT_2F origin)
@@ -557,7 +557,6 @@ namespace Renderer {
 		}else
 		{
 			SetWindowLongPtr(OverlayHwnd, GWL_EXSTYLE, GetWindowLongPtr(OverlayHwnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT);
-
 		}
 		SetWindowPos(OverlayHwnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 	}

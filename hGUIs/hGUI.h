@@ -207,7 +207,8 @@ namespace h_gui
 		{
 		}
 
-		control_group(std::wstring label, const bool collapsible = false, const bool named = true, const bool enabled = true)
+		control_group(std::wstring label, const bool collapsible = false, const bool named = true,
+		              const bool enabled = true)
 			: interactable({0, 0}, enabled),
 			  renderable(),
 			  label_(std::move(label)),
@@ -232,17 +233,25 @@ namespace h_gui
 	};
 
 	class tab : public interactable, public renderable
-	{};
+	{
+		std::wstring text;
+		std::vector<std::shared_ptr<control_group>> groups_;
+	public:
+		tab(std::wstring text);
+		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
+		std::shared_ptr<control_group> add_group(std::wstring label);
+	};
 
 	class tab_group : public interactable, public renderable
 	{
-
 		std::wstring text;
-
+		std::vector<std::shared_ptr<tab>> tabs_;
 	public:
 		tab_group(std::wstring text);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
-			};
+		std::shared_ptr<tab> add_tab(std::wstring label);
+	};
+
 
 	class section : public interactable, public renderable
 	{
@@ -254,8 +263,10 @@ namespace h_gui
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		bool was_just_selected(LPPOINT cursor_pos);
 		std::shared_ptr<tab_group> get_tab_group_ptr();
+		std::shared_ptr<tab> add_tab(std::wstring label);
 		void set_selected(bool selected);
 	};
+
 
 	class category : public interactable, public renderable
 	{
@@ -266,50 +277,40 @@ namespace h_gui
 		category(std::wstring text, std::shared_ptr<window> parent);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		std::shared_ptr<section> add_section(std::wstring text);
-
 	};
+
 
 	class sidebar_widget : public interactable, public renderable
 	{
 		std::wstring text;
-
 	public:
 		sidebar_widget(std::wstring text);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 	};
 
+
 	class window : public interactable, public renderable, public std::enable_shared_from_this<window>
 	{
 	private:
-		std::shared_ptr<tab_group> selected_section_tabs = nullptr;
-
+		std::shared_ptr<section> currently_selected_section = nullptr;
 		std::vector<std::shared_ptr<category>> categories_{};
 		std::shared_ptr<sidebar_widget> sb_widget_top = std::make_shared<sidebar_widget>(L"TOP WIDGET");
 		std::shared_ptr<sidebar_widget> sb_widget_bottom = std::make_shared<sidebar_widget>(L"BOTTOM WIDGET");
-
-
 		std::wstring title_;
 		D2D1_POINT_2F drag_anchor_ = {};
 		bool being_dragged = false;
-
 	public:
 		window(std::wstring title, const D2D1_POINT_2F& origin, const bool enabled = true)
 			: interactable({origin.x, origin.y}, enabled),
 			  title_(std::move(title))
 		{
-			// size_ = {
-			// 	h_style::structural::control_width
-			// 	+ (h_style::structural::base::margin * 4)
-			// 	+ (h_style::structural::base::pad * 2),
-			// 	0
-			// };
-			size_ = { 1200, 720 };
-
+			size_ = {
+				h_style::structural::window::width, h_style::structural::window::height};
 		}
-
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		std::shared_ptr<category> add_category(const std::wstring& label);
-		void set_selected_tab_group(std::shared_ptr<tab_group> tabs);
+		void set_selected_tab_group(std::shared_ptr<section> section);
+		std::shared_ptr<section> get_selected_section();
 	};
 
 	class workspace

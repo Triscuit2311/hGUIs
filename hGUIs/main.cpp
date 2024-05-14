@@ -26,8 +26,13 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 	auto c1 = win1->add_category(L"CAT1");
 
 	auto s1 = c1->add_section(L"Sec1");
+	auto t1 = s1->add_tab(L"TAB1");
+	auto t2 = s1->add_tab(L"TAB2");
+	auto t3 = s1->add_tab(L"TAB3");
 
 	auto s2 = c1->add_section(L"Sec2");
+	auto t4 = s2->add_tab(L"TAB4");
+
 
 
 	// c1->add_section(L"Sec3");

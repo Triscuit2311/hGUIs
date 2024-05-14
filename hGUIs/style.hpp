@@ -12,15 +12,32 @@ namespace h_style
 
 		namespace factors
 		{
-			constexpr float control_width_factor = 10.0f;
+			constexpr float control_width_factor = 12.0f;
+			constexpr float space_factor = 5.0f;
+
 		}
 
 		constexpr float control_width = base::block_height * factors::control_width_factor;
-		constexpr float group_width = control_width + (2 * base::margin);
-		constexpr float window_width = group_width + (2 * base::margin);
+		constexpr float space = base::margin * factors::space_factor;
 
-		constexpr float window_corner_thickness = base::pad * 2;
-		constexpr float window_corner_length = base::margin * 2;
+
+
+		namespace window
+		{
+			constexpr float top_bar_height = space * 2.0f;
+			constexpr float side_bar_width = control_width;
+			constexpr float side_bar_bottom_widget_height = space * 3.0f;
+
+			constexpr float tab_select_height = space;
+			constexpr float control_groups_width = (control_width * 2.0f) + (space * 5.0f);
+			constexpr float control_groups_height = (control_width * 2.0f) + (space * 3.0f);
+
+			constexpr float width = side_bar_width + control_groups_width;
+			constexpr float height = top_bar_height + tab_select_height + control_groups_height;
+
+		}
+
+
 
 	}
 

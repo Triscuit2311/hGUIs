@@ -17,7 +17,7 @@ long i32 = 123;
 
 bool show_menu = true;
 bool use_desktop_blur = false;
-bool block_inputs_in_menu = true;
+bool block_inputs_in_menu = false;
 bool exit_thread = false;
 
 // Runs once at start-time, initializes all the windows, groups and controls for the GUI
@@ -29,6 +29,18 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 
 	auto s1 = c1->add_section(L"Sec1");
 	auto t1 = s1->add_tab(L"TAB1");
+	auto g1 = t1->add_group(L"asd");
+	g1->button(L"BUTTON_WITH_ACTION", []() {LOG("BUTTON PRESSED"); });
+	g1->button(L"BUTTON_NO_ACTION");
+
+	// g1->label(L"yeet");
+	 g1->toggle(&b, L"Too00gle");
+
+	// auto g2 = t1->add_group(L"asd");
+	// g2->slider_long(&i32, -10, 10, L"Slippidy", [](long i){});
+
+
+
 	auto t2 = s1->add_tab(L"TAB2");
 	auto t3 = s1->add_tab(L"TAB3");
 
@@ -112,7 +124,7 @@ void pre_render(std::shared_ptr<DiInputManager> inputs, Renderer::D2DxOverlay* r
 // Draw directly to the screen BEHIND the main GUI
 void render_direct_pre(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::D2DxOverlay* renderer)
 {
-	renderer->DrawString(L"Triscuit2311", 12, 8.0f, { 10,10 });
+	renderer->DrawStringC(L"Triscuit2311", 8.0f, { 10,10 }, {1,1,1,1});
 }
 
 // Draw the main GUI and gui components, only modify if needed

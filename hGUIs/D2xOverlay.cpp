@@ -286,25 +286,23 @@ namespace Renderer {
 		PopSolidColor();
 	}
 
-	void D2DxOverlay::DrawCustomEllipse(const D2D1_POINT_2F origin, const float width, const float height, const bool filled = true, const float stroke = 0) const
+	void D2DxOverlay::DrawCustomEllipse(const D2D1_POINT_2F origin, const float width, const float height, bool filled, D2D1_COLOR_F fill_col, float stroke, D2D1_COLOR_F stroke_col)
 	{
 		// Draw filled
 		if (filled) {
-			SetGradientParameters(
-				{ origin.x,origin.y,origin.x + width,origin.y + height },
-				m_LinearGradientFillDirection);
+			PushSolidColor();
+			SetSolidColor(fill_col);
 			m_D2D1RenderTarget->FillEllipse(D2D1::Ellipse(origin, width, height), m_FillBrush);
-			return;
+			PopSolidColor();
 		}
 
 		if (stroke <= 0) return;
 
-		SetGradientParameters(
-			{ origin.x,origin.y,origin.x + width,origin.y + height },
-			m_LinearGradientStrokeDirection);
-
 		// Draw outline
+		PushSolidColor();
+		SetSolidColor(stroke_col);
 		m_D2D1RenderTarget->DrawEllipse(D2D1::Ellipse(origin, width, height), m_StrokeBrush, stroke);
+		PopSolidColor();
 	}
 }
 

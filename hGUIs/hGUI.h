@@ -57,10 +57,16 @@ namespace h_gui
 		void calc_hovered(LPPOINT cursor_pos);
 		void set_hovered(bool hovered);
 		void set_origin(D2D1_POINT_2F origin);
+		D2D1_POINT_2F get_size() const;
 		void enable();
 		void disable();
 		bool is_hovered();
 	};
+
+	inline D2D1_POINT_2F interactable::get_size() const
+	{
+		return size_;
+	}
 
 	class renderable
 	{
@@ -129,13 +135,13 @@ namespace h_gui
 		{
 			std::wstring label;
 			bool* state;
-			invoker_id on_enable;
-			invoker_id on_disable;
+			invoker_id on_enable = 0;
+			invoker_id on_disable = 0;
 
 		public:
 			toggle(bool* data, std::wstring label,
-			       const std::function<void()>& on_enabled = {},
-			       const std::function<void()>& on_disabled = {});
+			       const std::function<void()>& on_enabled = []{},
+			       const std::function<void()>& on_disabled = []{});
 
 			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		};
@@ -143,7 +149,7 @@ namespace h_gui
 		class button final : public control
 		{
 			std::wstring label;
-			invoker_id action;
+			invoker_id action = 0;
 
 		public:
 			button(std::wstring label, const std::function<void()>& action = {});
@@ -163,7 +169,7 @@ namespace h_gui
 			std::wstring label;
 			std::any any_data_ = {};
 
-			invoker_id on_update_;
+			invoker_id on_update_ = 0;
 
 		public:
 			slider_double(double* data, double min, double max, std::wstring label,
@@ -183,7 +189,7 @@ namespace h_gui
 			std::wstring label;
 			std::any any_data_ = {};
 
-			invoker_id on_update_;
+			invoker_id on_update_ = 0;
 
 		public:
 			slider_long(long* data, long min, long max, std::wstring label,
@@ -235,6 +241,7 @@ namespace h_gui
 	class tab : public interactable, public renderable
 	{
 		std::vector<std::shared_ptr<control_group>> groups_;
+		blocks_count expected_blocks = 0;
 	public:
 		std::wstring text;
 		tab(std::wstring text);
@@ -346,7 +353,7 @@ namespace h_gui
 	class async_invoker
 	{
 	private:
-		inline static invoker_id s_id_ = 0;
+		inline static invoker_id s_id_ = 1;
 
 		std::unordered_map<size_t, std::function<void(std::any)>> func_map_ = {};
 

@@ -21,20 +21,10 @@ namespace h_gui::controls
 
 	blocks_count label::render(uint64_t tick, LPPOINT cursor_pos)
 	{
-		if (hovered_)
-		{
-			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor({1.0, 0, 0, 1});
-		}
 
-		gui_manager::renderer->DrawString(text,
+		gui_manager::renderer->DrawStringC(text,
 		                                  h_style::theme::text::font_size,
-		                                  {origin_.x + h_style::structural::base::margin, origin_.y});
-
-		if (hovered_)
-		{
-			gui_manager::renderer->PopSolidColor();
-		}
+		                                  {origin_.x + h_style::structural::base::margin, origin_.y}, { 1.0, 0, 0, 1 });
 
 		return 1;
 	}
@@ -49,8 +39,13 @@ namespace h_gui::controls
 			h_style::structural::base::block_height
 		};
 
-		this->on_enable = globals::invoker->add_func([on_enabled](std::any n) { on_enabled(); });
-		this->on_disable = globals::invoker->add_func([on_disabled](std::any n) { on_disabled(); });
+		if (on_enabled != nullptr) {
+			this->on_enable = globals::invoker->add_func([on_enabled](std::any n) { on_enabled(); });
+		}
+
+		if (on_enabled != nullptr) {
+			this->on_disable = globals::invoker->add_func([on_disabled](std::any n) { on_disabled(); });
+		}
 	}
 
 	blocks_count toggle::render(uint64_t tick, LPPOINT cursor_pos)
@@ -89,13 +84,13 @@ namespace h_gui::controls
 			}
 		}
 
-		gui_manager::renderer->DrawString(label,
+		gui_manager::renderer->DrawStringC(label,
 		                                  h_style::theme::text::font_size,
 		                                  {
 			                                  origin_.x + (h_style::structural::base::margin * 4) + (
 				                                  h_style::structural::base::pad * 2),
 			                                  origin_.y
-		                                  });
+		                                  }, h_style::theme::colors::base::fg);
 
 
 		if (hovered_)
@@ -118,7 +113,13 @@ namespace h_gui::controls
 			h_style::structural::base::block_height * 2
 		};
 
-		this->action = globals::invoker->add_func([action](std::any n) { action(); });
+		if(action == nullptr)
+		{
+			this->action = globals::invoker->add_func([action](std::any n) {LOG("NO ACTION SET FOR BUTTON"); });
+		}
+		else {
+			this->action = globals::invoker->add_func([action](std::any n) { action(); });
+		}
 	}
 
 	blocks_count button::render(uint64_t tick, LPPOINT cursor_pos)
@@ -184,26 +185,25 @@ namespace h_gui::controls
 			h_style::structural::base::block_height * 2
 		};
 
-
-		//TODO: set percent based on val initial
-
-		this->on_update_ = globals::invoker->add_func([on_update, min](const std::any& n)
-		{
-			if (!n.has_value())
-			{
-				ERR("No value on std::any");
-				return;
-			}
-			try
-			{
-				auto v = std::any_cast<double>(n);
-				on_update(v);
-			}
-			catch (const std::bad_any_cast& e)
-			{
-				ERR("Bad std::any_cast! : %s", e.what());
-			}
-		});
+		if (on_update != nullptr) {
+			this->on_update_ = globals::invoker->add_func([on_update, min](const std::any& n)
+				{
+					if (!n.has_value())
+					{
+						ERR("No value on std::any");
+						return;
+					}
+					try
+					{
+						auto v = std::any_cast<double>(n);
+						on_update(v);
+					}
+					catch (const std::bad_any_cast& e)
+					{
+						ERR("Bad std::any_cast! : %s", e.what());
+					}
+				});
+		}
 	}
 
 	blocks_count slider_double::render(uint64_t tick, LPPOINT cursor_pos)
@@ -215,18 +215,14 @@ namespace h_gui::controls
 				ERR("BAD swprintf on format string (slider_double)");
 			}
 			const std::wstring ws(buff);
-			gui_manager::renderer->DrawString(ws,
+			gui_manager::renderer->DrawStringC(ws,
 			                                  h_style::theme::text::font_size,
-			                                  {origin_.x + h_style::structural::base::margin, origin_.y});
+			                                  {origin_.x + h_style::structural::base::margin, origin_.y}, h_style::theme::colors::base::fg);
 		}
 
 		{
 			// Slider line
-			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(hovered_
-				                                     ? h_style::theme::colors::control::slider_hovered
-				                                     : h_style::theme::colors::control::slider);
-			gui_manager::renderer->DrawLine(
+			gui_manager::renderer->DrawLineC(
 				{
 					origin_.x + h_style::structural::base::margin,
 					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
@@ -237,9 +233,12 @@ namespace h_gui::controls
 					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
 						2)
 				},
-				1
+				1,
+				hovered_
+				? h_style::theme::colors::control::slider_hovered
+				: h_style::theme::colors::control::slider
 			);
-			gui_manager::renderer->PopSolidColor();
+
 		}
 
 
@@ -249,11 +248,9 @@ namespace h_gui::controls
 
 		{
 			// slider handle
-			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(h_style::theme::colors::control::slider_handle);
-			float x_pos = min_pos_x + ((max_pos_x - min_pos_x) * percent_);
 
-			gui_manager::renderer->DrawSolidEllipse(
+			float x_pos = min_pos_x + ((max_pos_x - min_pos_x) * percent_);
+			gui_manager::renderer->DrawCustomEllipse(
 				{
 					x_pos,
 					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
@@ -262,9 +259,8 @@ namespace h_gui::controls
 				h_style::structural::base::margin,
 				h_style::structural::base::margin,
 				true,
-				0
+				h_style::theme::colors::control::slider_handle,0,{0,0,0,0}
 			);
-			gui_manager::renderer->PopSolidColor();
 		}
 
 
@@ -300,24 +296,25 @@ namespace h_gui::controls
 
 
 		//TODO: set percent based on val initial
-
-		this->on_update_ = globals::invoker->add_func([on_update, min](const std::any& n)
-		{
-			if (!n.has_value())
-			{
-				ERR("No value on std::any");
-				return;
-			}
-			try
-			{
-				auto v = std::any_cast<long>(n);
-				on_update(v);
-			}
-			catch (const std::bad_any_cast& e)
-			{
-				ERR("Bad std::any_cast! : %s", e.what());
-			}
-		});
+		if (on_update != nullptr) {
+			this->on_update_ = globals::invoker->add_func([on_update, min](const std::any& n)
+				{
+					if (!n.has_value())
+					{
+						ERR("No value on std::any");
+						return;
+					}
+					try
+					{
+						auto v = std::any_cast<long>(n);
+						on_update(v);
+					}
+					catch (const std::bad_any_cast& e)
+					{
+						ERR("Bad std::any_cast! : %s", e.what());
+					}
+				});
+		}
 	}
 
 	blocks_count slider_long::render(uint64_t tick, LPPOINT cursor_pos)
@@ -329,18 +326,14 @@ namespace h_gui::controls
 				ERR("BAD swprintf on format string (slider_long)");
 			}
 			const std::wstring ws(buff);
-			gui_manager::renderer->DrawString(ws,
+			gui_manager::renderer->DrawStringC(ws,
 			                                  h_style::theme::text::font_size,
-			                                  {origin_.x + h_style::structural::base::margin, origin_.y});
+			                                  {origin_.x + h_style::structural::base::margin, origin_.y}, h_style::theme::colors::base::fg);
 		}
 
 		{
 			// Slider line
-			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(hovered_
-				                                     ? h_style::theme::colors::control::slider_hovered
-				                                     : h_style::theme::colors::control::slider);
-			gui_manager::renderer->DrawLine(
+			gui_manager::renderer->DrawLineC(
 				{
 					origin_.x + h_style::structural::base::margin,
 					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
@@ -351,9 +344,11 @@ namespace h_gui::controls
 					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
 						2)
 				},
-				1
+				1,
+				hovered_
+				? h_style::theme::colors::control::slider_hovered
+				: h_style::theme::colors::control::slider
 			);
-			gui_manager::renderer->PopSolidColor();
 		}
 
 
@@ -363,11 +358,9 @@ namespace h_gui::controls
 
 		{
 			// slider handle
-			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(h_style::theme::colors::control::slider_handle);
-			float x_pos = min_pos_x + ((max_pos_x - min_pos_x) * percent_);
 
-			gui_manager::renderer->DrawSolidEllipse(
+			float x_pos = min_pos_x + ((max_pos_x - min_pos_x) * percent_);
+			gui_manager::renderer->DrawCustomEllipse(
 				{
 					x_pos,
 					origin_.y + h_style::structural::base::block_height + (h_style::structural::base::margin *
@@ -375,10 +368,9 @@ namespace h_gui::controls
 				},
 				h_style::structural::base::margin,
 				h_style::structural::base::margin,
-				true,
-				0
+				true, h_style::theme::colors::control::slider_handle, 0, {0,0,0,0}
+				
 			);
-			gui_manager::renderer->PopSolidColor();
 		}
 
 
@@ -419,19 +411,71 @@ namespace h_gui
 				origin_.y + size_.y
 			}, true, 0, { 1, 1, 0, 1 }, {});
 
-		gui_manager::renderer->DrawStringC(text, h_style::theme::text::font_size, { origin_.x + (size_.x/2), origin_.y + (size_.y /2)}
-			, { 0,0,0,1 });
 
 
+		blocks_count blocks = 0;
+		int group_spaces = 0;
+		float vert_offset = 0;
+		bool is_second_column = false;
+		for (auto& group: groups_)
+		{
+			D2D1_POINT_2F group_pos =
+			{
+				origin_.x + h_style::structural::space
+				+ (is_second_column ? (h_style::structural::control_width + (h_style::structural::space * 2)) : 0),
+
+				origin_.y + h_style::structural::window::tab_select_height
+				+ vert_offset
+				+ (group_spaces * h_style::structural::space)
+			};
 
 
+			group->set_origin(group_pos);
 
+			++group_spaces;
 
+			if (!enabled_)
+			{
+				group->disable();
+			}
+			else
+			{
+				group->enable();
+				if (!hovered_)
+				{
+					group->set_hovered(false);
+				}
+				else
+				{
+					group->calc_hovered(cursor_pos);
+				}
+			}
 
+			blocks += group->render(tick, cursor_pos);
 
+			vert_offset += group->get_size().y;
 
+			if (!is_second_column && blocks >= expected_blocks / 2)
+			{
+				is_second_column = true;
+				group_spaces = 0;
+				vert_offset = 0;
+			}
+		}
 
+		// setup for next frame
+		expected_blocks = blocks;
 
+		static wchar_t buff[256];
+		if (swprintf(buff, 256, L"expected: %d", expected_blocks) < 0)
+		{
+			ERR("BAD swprintf on format string (slider_double)");
+		}
+		const std::wstring ws(buff);
+		
+		gui_manager::renderer->DrawStringC(ws, h_style::theme::text::font_size, 
+			{ origin_.x + (size_.x / 2), origin_.y + (size_.y / 2) }
+		, { 0,0,0,1 });
 
 		return 0;
 	}
@@ -638,9 +682,9 @@ namespace h_gui
 
 	blocks_count sidebar_widget::render(uint64_t tick, LPPOINT cursor_pos)
 	{
-		gui_manager::renderer->DrawString(text,
+		gui_manager::renderer->DrawStringC(text,
 		                                  h_style::theme::text::font_size,
-		                                  {origin_.x + h_style::structural::base::margin, origin_.y});
+		                                  {origin_.x + h_style::structural::base::margin, origin_.y}, h_style::theme::colors::base::fg);
 
 		return 3;
 	}
@@ -797,6 +841,13 @@ namespace h_gui
 					origin_.y + h_style::structural::window::top_bar_height
 				});
 			tab_grp->render(tick, cursor_pos);
+
+			if (hovered_) {
+				tab_grp->calc_hovered(cursor_pos);
+			}else
+			{
+				tab_grp->set_hovered(false);
+			}
 		}
 
 
@@ -913,13 +964,13 @@ namespace h_gui
 		};
 
 
-		gui_manager::renderer->DrawString(label_,
+		gui_manager::renderer->DrawStringC(label_,
 		                                  h_style::theme::text::font_size,
 		                                  {
 			                                  origin_.x + (h_style::structural::base::margin * 2) +
 			                                  h_style::structural::base::pad,
 			                                  origin_.y
-		                                  });
+		                                  }, h_style::theme::colors::base::fg);
 		// Border
 		{
 			auto border_color = h_style::theme::colors::group::border;
@@ -927,63 +978,18 @@ namespace h_gui
 			{
 				border_color = h_style::theme::colors::group::border_hovered;
 			}
-			gui_manager::renderer->PushSolidColor();
-			gui_manager::renderer->SetSolidColor(border_color);
 
 
-			gui_manager::renderer->DrawLine(
-				{
-					origin_.x + h_style::structural::base::margin,
-					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
-				},
-				{
-					origin_.x + (h_style::structural::base::margin * 2),
-					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
-				}, 1);
-
-			gui_manager::renderer->DrawLine(
-				{
-					origin_.x + h_style::structural::base::margin,
-					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
-				},
-				{
-					origin_.x + (h_style::structural::base::margin),
-					origin_.y + size_.y - h_style::structural::base::margin
-				}, 1);
-
-			gui_manager::renderer->DrawLine(
-				{
-					origin_.x + (h_style::structural::base::margin),
-					origin_.y + size_.y - h_style::structural::base::margin
-				},
-				{
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect({
+					origin_.x,
+					origin_.y,
 					origin_.x + size_.x,
-					origin_.y + size_.y - h_style::structural::base::margin
-				}, 1);
+					origin_.y + size_.y
+					}, h_style::theme::border_radius, h_style::theme::border_radius),
+				true, { 1,0,1,1 }, 0, {}
+			);
 
-			gui_manager::renderer->DrawLine(
-				{
-					origin_.x + size_.x,
-					origin_.y + size_.y - h_style::structural::base::margin
-				},
-				{
-					origin_.x + size_.x,
-					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
-				}, 1);
-
-			gui_manager::renderer->DrawLine(
-				{
-					origin_.x + size_.x,
-					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
-				},
-				{
-					origin_.x + (h_style::structural::base::margin * 2) + (h_style::theme::text::get_text_width(
-						label_.length())),
-					origin_.y + (h_style::theme::text::font_size - h_style::structural::base::margin)
-				}, 1);
-
-
-			gui_manager::renderer->PopSolidColor();
 		}
 
 		blocks_ = 1; // start at 1 for top label
@@ -1118,6 +1124,7 @@ namespace h_gui
 {
 	bool gui_manager::render(UINT32 region_width, UINT32 region_height, uint64_t tick, LPPOINT cursor_pos)
 	{
+		renderer->SetSolidColor({ 1,1,1,1 });
 		for (const auto& ws : workspaces_)
 		{
 			ws->render(region_width, region_height, tick, cursor_pos);
@@ -1221,6 +1228,7 @@ namespace h_gui
 
 	void async_invoker::invoke(invoker_id id, const std::any& arg)
 	{
+		if (id < 1) { return; }
 		std::lock_guard<std::mutex> guard(this->queue_mutex_);
 		invoke_queue_.emplace_back(id, arg);
 	}

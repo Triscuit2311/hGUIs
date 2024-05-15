@@ -189,6 +189,8 @@ namespace Renderer {
 		                    D2D1_COLOR_F stroke_col);
 		void DrawCustomRoundedRect(D2D1_ROUNDED_RECT rect, bool filled = true, D2D1_COLOR_F fill_col = { 1,1,1,1 }, float stroke = 1,
 		                           D2D1_COLOR_F stroke_col = { 1,1,1,1 });
+		void DrawCustomEllipse(D2D1_POINT_2F origin, float width, float height, bool filled, D2D1_COLOR_F fill_col,
+		                       float stroke, D2D1_COLOR_F stroke_col);
 
 		void DrawBitmap(D2DBitmapID bitmapId, D2D1_RECT_F rect, float opacity = 1.0f) const;
 		/**

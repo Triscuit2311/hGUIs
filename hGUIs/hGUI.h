@@ -140,6 +140,7 @@ namespace h_gui
 			D2D1_COLOR_F marker_bg = { h_style::theme::colors::control::toggle_bg_off };
 			D2D1_COLOR_F marker_fg = { h_style::theme::colors::control::toggle_marker_off };
 			D2D1_POINT_2F marker_offset = { -1,-1 };
+			inline static const float toggle_anim_alpha = 0.04f;
 
 		public:
 			toggle(bool* data, std::wstring label,

@@ -67,13 +67,13 @@ namespace h_gui::controls
 		{
 
 
-			marker_fg = anim::lerp_colf(marker_fg, *state ? h_style::theme::colors::control::toggle_marker_on : h_style::theme::colors::control::toggle_marker_off, 0.05f);
-			marker_bg = anim::lerp_colf(marker_bg, *state ? h_style::theme::colors::control::toggle_bg_on : h_style::theme::colors::control::toggle_bg_off, 0.05f);
+			marker_fg = anim::lerp_colf(marker_fg, *state ? h_style::theme::colors::control::toggle_marker_on : h_style::theme::colors::control::toggle_marker_off, toggle_anim_alpha);
+			marker_bg = anim::lerp_colf(marker_bg, *state ? h_style::theme::colors::control::toggle_bg_on : h_style::theme::colors::control::toggle_bg_off, toggle_anim_alpha);
 
 			static D2D1_POINT_2F on_offset = { size_.x - size_.y / 2, size_.y / 2 };
 			static D2D1_POINT_2F off_offset = { size_.x - h_style::structural::control::toggle_marker_width + size_.y / 2, size_.y / 2 };
 
-			marker_offset = anim::lerp_2f(marker_offset, *state ?on_offset : off_offset , 0.05f);
+			marker_offset = anim::lerp_2f(marker_offset, *state ?on_offset : off_offset , toggle_anim_alpha);
 
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect(

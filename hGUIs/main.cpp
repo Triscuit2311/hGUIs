@@ -15,6 +15,9 @@ double dub = 99.0;
 long i32 = 13;
 double f64= 9.0;
 
+long i32b = 1000;
+double f64a = 99999.0;
+
 
 bool show_menu = true;
 bool use_desktop_blur = false;
@@ -48,9 +51,29 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 	grp->toggle(&b[15], L"In a");
 	grp->toggle(&b[16], L"Cuddle");
 
-	grp = tab->add_group(L"Group1");
+	grp = tab->add_group(L"Group2");
 	grp->slider_double(&f64, -10, 10, L"Slip Speed: %.2lf M/s", [](long i) {});
 	grp->slider_long(&i32, -120, 120, L"Slide %d mph", [](long i) {});
+
+
+	grp = tab->add_group(L"Group3");
+	grp->toggle(&b[14], L"Bingo");
+	grp->toggle(&b[15], L"Bango");
+	grp->toggle(&b[16], L"Bongo");
+	grp->label(L"I don't wanna");
+	grp->label(L"Leave the congo");
+
+
+
+	tab = sec->add_tab(L"Advanced");
+	grp = tab->add_group(L"Group1");
+	grp->slider_double(&f64a, -100, 1000000, L"Double A: %.2lf", [](long i) {});
+	grp->slider_long(&i32b, 0, 99999999999999, L"Long B: %ld", [](long i) {});
+	grp = tab->add_group(L"Group1");
+	grp->slider_double(&f64a, -100, 1000000, L"(also) Double A: %.2lf", [](long i) {});
+	grp->slider_long(&i32b, 0, 99999999999999, L"(also) Long B: %ld", [](long i) {});
+
+
 
 
 
@@ -58,22 +81,21 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 	sec = cat->add_section(L"Visuals", L"eye_1_ico.png");
 	tab = sec->add_tab(L"General");
 	grp = tab->add_group(L"Group1");
-	grp->slider_double(&f64, -10, 10, L"Slippy: %.2lf", [](long i) {});
-	grp->slider_long(&i32, -120, 120, L"Slidy [%ld]", [](long i) {});
-	tab = sec->add_tab(L"Advanced");
+	grp->label(L"Nothing!");
 	grp = tab->add_group(L"Group1");
-	grp->slider_double(&f64, -10, 10, L"Slippy: %.2lf", [](long i) {});
-	grp->slider_long(&i32, -120, 120, L"Slidy [%ld]", [](long i) {});
-
+	grp->label(L"Nothing!");	grp = tab->add_group(L"Group1");
+	grp->label(L"Nothing!");
 	sec = cat->add_section(L"Item ESP", L"eye_2_ico.png");
 	tab = sec->add_tab(L"General");
 	grp = tab->add_group(L"Group1");
-	grp->slider_double(&f64, -10, 10, L"Slippy: %.2lf", [](long i) {});
-	grp->slider_long(&i32, -120, 120, L"Slidy [%ld]", [](long i) {});
+	grp->label(L"Nothing!");
+	grp = tab->add_group(L"Group1");
+	grp->label(L"Nothing!");
+	grp = tab->add_group(L"Group1");
+	grp->label(L"Nothing!");
 	tab = sec->add_tab(L"Advanced");
 	grp = tab->add_group(L"Group1");
-	grp->slider_double(&f64, -10, 10, L"Slippy: %.2lf", [](long i) {});
-	grp->slider_long(&i32, -120, 120, L"Slidy [%ld]", [](long i) {});
+	grp->label(L"Nothing!");
 
 
 

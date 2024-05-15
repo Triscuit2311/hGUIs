@@ -19,9 +19,9 @@ long i32b = 1000;
 double f64a = 99999.0;
 
 
-bool show_menu = true;
-bool use_desktop_blur = false;
-bool block_inputs_in_menu = false;
+bool show_menu = false;
+bool use_desktop_blur = true;
+bool block_inputs_in_menu = true;
 bool exit_thread = false;
 
 // Runs once at start-time, initializes all the windows, groups and controls for the GUI

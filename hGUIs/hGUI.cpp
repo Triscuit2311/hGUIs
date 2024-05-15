@@ -21,10 +21,10 @@ namespace h_gui::controls
 
 	blocks_count label::render(uint64_t tick, LPPOINT cursor_pos)
 	{
-
 		gui_manager::renderer->DrawStringC(text,
-		                                  h_style::theme::text::font_size,
-		                                  {origin_.x + h_style::structural::base::margin, origin_.y}, { 1.0, 0, 0, 1 });
+		                                   h_style::theme::text::font_size_m,
+		                                   {origin_.x + h_style::structural::base::margin, origin_.y},
+		                                   h_style::theme::colors::base::fg);
 
 		return 1;
 	}
@@ -39,68 +39,75 @@ namespace h_gui::controls
 			h_style::structural::base::block_height
 		};
 
-		if (on_enabled != nullptr) {
+		//default to off position
+		marker_offset = {
+			   size_.x - h_style::structural::control::toggle_marker_width + size_.y / 2, size_.y / 2 };
+
+		if (on_enabled != nullptr)
+		{
 			this->on_enable = globals::invoker->add_func([on_enabled](std::any n) { on_enabled(); });
 		}
 
-		if (on_enabled != nullptr) {
+		if (on_enabled != nullptr)
+		{
 			this->on_disable = globals::invoker->add_func([on_disabled](std::any n) { on_disabled(); });
 		}
 	}
 
 	blocks_count toggle::render(uint64_t tick, LPPOINT cursor_pos)
 	{
+		gui_manager::renderer->DrawStringC(label,
+		                                   h_style::theme::text::font_size_m,
+		                                   {
+			                                   origin_.x + h_style::structural::base::margin,
+			                                   origin_.y
+		                                   }, hovered_
+			                                      ? h_style::theme::colors::base::fg_hi
+			                                      : h_style::theme::colors::base::fg);
 		{
-			D2D1_COLOR_F fill_col = hovered_
-				                        ? h_style::theme::colors::control::toggle_hovered
-				                        : h_style::theme::colors::control::toggle;
+
+
+			marker_fg = anim::lerp_colf(marker_fg, *state ? h_style::theme::colors::control::toggle_marker_on : h_style::theme::colors::control::toggle_marker_off, 0.05f);
+			marker_bg = anim::lerp_colf(marker_bg, *state ? h_style::theme::colors::control::toggle_bg_on : h_style::theme::colors::control::toggle_bg_off, 0.05f);
+
+			static D2D1_POINT_2F on_offset = { size_.x - size_.y / 2, size_.y / 2 };
+			static D2D1_POINT_2F off_offset = { size_.x - h_style::structural::control::toggle_marker_width + size_.y / 2, size_.y / 2 };
+
+			marker_offset = anim::lerp_2f(marker_offset, *state ?on_offset : off_offset , 0.05f);
 
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect(
-					{
-						origin_.x + h_style::structural::base::margin,
-						origin_.y + h_style::structural::base::pad,
-						origin_.x + h_style::structural::base::block_height - (h_style::structural::base::pad *
-							2) + h_style::structural::base::margin,
-						origin_.y + size_.y - h_style::structural::base::pad
+					{origin_.x + size_.x - h_style::structural::control::toggle_marker_width,
+					origin_.y,
+					origin_.x + size_.x,
+					origin_.y + size_.y
 					},
-					h_style::theme::border_radius / 2,
-					h_style::theme::border_radius / 2), true, fill_col, 0);
+					size_.y/2, size_.y/2
+				), true,
+				marker_bg,
+				0, {  }
+			);
 
-			if (*state)
-			{
-				gui_manager::renderer->DrawCustomRoundedRect(
-					D2D1::RoundedRect(
-						{
-							origin_.x + (h_style::structural::base::margin) + h_style::structural::base::pad,
-							origin_.y + (h_style::structural::base::pad * 2),
-							origin_.x + h_style::structural::base::block_height
-							- (h_style::structural::base::pad * 3) + h_style::structural::base::margin,
-							origin_.y + size_.y - (h_style::structural::base::pad * 2)
-						},
-						h_style::theme::border_radius / 3,
-						h_style::theme::border_radius / 3), false, {}, 1,
-					h_style::theme::colors::control::toggle_marker);
-			}
+
+			gui_manager::renderer->DrawCustomEllipse(
+				{
+					origin_.x + marker_offset.x,
+					origin_.y + marker_offset.y
+				}, size_.y / 2 - h_style::structural::base::pad, size_.y / 2 - h_style::structural::base::pad, true,
+				marker_fg, 0, {}
+			);
+
 		}
 
-		gui_manager::renderer->DrawStringC(label,
-		                                  h_style::theme::text::font_size,
-		                                  {
-			                                  origin_.x + (h_style::structural::base::margin * 4) + (
-				                                  h_style::structural::base::pad * 2),
-			                                  origin_.y
-		                                  }, h_style::theme::colors::base::fg);
 
 
-		if (hovered_)
+
+		if (hovered_ && gui_manager::input->IsMouseButtonJustPressed(DiInputManager::vM_LEFTBTN))
 		{
-			if (gui_manager::input->IsMouseButtonJustPressed(DiInputManager::vM_LEFTBTN))
-			{
-				*state = !*state;
-				globals::invoker->invoke(*state ? this->on_enable : this->on_disable, std::any{});
-			}
+			*state = !*state;
+			globals::invoker->invoke(*state ? this->on_enable : this->on_disable, std::any{});
 		}
+		
 
 		return 1;
 	}
@@ -113,11 +120,12 @@ namespace h_gui::controls
 			h_style::structural::base::block_height * 2
 		};
 
-		if(action == nullptr)
+		if (action == nullptr)
 		{
-			this->action = globals::invoker->add_func([action](std::any n) {LOG("NO ACTION SET FOR BUTTON"); });
+			this->action = globals::invoker->add_func([action](std::any n) { LOG("NO ACTION SET FOR BUTTON"); });
 		}
-		else {
+		else
+		{
 			this->action = globals::invoker->add_func([action](std::any n) { action(); });
 		}
 	}
@@ -142,7 +150,7 @@ namespace h_gui::controls
 
 		{
 			//TODO: Center text
-			gui_manager::renderer->DrawStringC(label, h_style::theme::text::font_size, {
+			gui_manager::renderer->DrawStringC(label, h_style::theme::text::font_size_m, {
 				                                   origin_.x + (h_style::structural::base::margin * 2),
 				                                   origin_.y + h_style::structural::base::pad +
 				                                   h_style::structural::base::margin,
@@ -185,24 +193,25 @@ namespace h_gui::controls
 			h_style::structural::base::block_height * 2
 		};
 
-		if (on_update != nullptr) {
+		if (on_update != nullptr)
+		{
 			this->on_update_ = globals::invoker->add_func([on_update, min](const std::any& n)
+			{
+				if (!n.has_value())
 				{
-					if (!n.has_value())
-					{
-						ERR("No value on std::any");
-						return;
-					}
-					try
-					{
-						auto v = std::any_cast<double>(n);
-						on_update(v);
-					}
-					catch (const std::bad_any_cast& e)
-					{
-						ERR("Bad std::any_cast! : %s", e.what());
-					}
-				});
+					ERR("No value on std::any");
+					return;
+				}
+				try
+				{
+					auto v = std::any_cast<double>(n);
+					on_update(v);
+				}
+				catch (const std::bad_any_cast& e)
+				{
+					ERR("Bad std::any_cast! : %s", e.what());
+				}
+			});
 		}
 	}
 
@@ -216,8 +225,9 @@ namespace h_gui::controls
 			}
 			const std::wstring ws(buff);
 			gui_manager::renderer->DrawStringC(ws,
-			                                  h_style::theme::text::font_size,
-			                                  {origin_.x + h_style::structural::base::margin, origin_.y}, h_style::theme::colors::base::fg);
+			                                   h_style::theme::text::font_size_m,
+			                                   {origin_.x + h_style::structural::base::margin, origin_.y},
+			                                   h_style::theme::colors::base::fg);
 		}
 
 		{
@@ -235,10 +245,9 @@ namespace h_gui::controls
 				},
 				1,
 				hovered_
-				? h_style::theme::colors::control::slider_hovered
-				: h_style::theme::colors::control::slider
+					? h_style::theme::colors::control::slider_hovered
+					: h_style::theme::colors::control::slider
 			);
-
 		}
 
 
@@ -248,7 +257,8 @@ namespace h_gui::controls
 
 		{
 			// slider handle
-
+			percent_ = (*this->data_ - min_) / (max_ - min_);
+			percent_ = percent_ < 0 ? 0 : percent_ > 1 ? 1.0f : percent_;
 			float x_pos = min_pos_x + ((max_pos_x - min_pos_x) * percent_);
 			gui_manager::renderer->DrawCustomEllipse(
 				{
@@ -259,7 +269,7 @@ namespace h_gui::controls
 				h_style::structural::base::margin,
 				h_style::structural::base::margin,
 				true,
-				h_style::theme::colors::control::slider_handle,0,{0,0,0,0}
+				h_style::theme::colors::control::slider_handle, 0, {0, 0, 0, 0}
 			);
 		}
 
@@ -296,24 +306,25 @@ namespace h_gui::controls
 
 
 		//TODO: set percent based on val initial
-		if (on_update != nullptr) {
+		if (on_update != nullptr)
+		{
 			this->on_update_ = globals::invoker->add_func([on_update, min](const std::any& n)
+			{
+				if (!n.has_value())
 				{
-					if (!n.has_value())
-					{
-						ERR("No value on std::any");
-						return;
-					}
-					try
-					{
-						auto v = std::any_cast<long>(n);
-						on_update(v);
-					}
-					catch (const std::bad_any_cast& e)
-					{
-						ERR("Bad std::any_cast! : %s", e.what());
-					}
-				});
+					ERR("No value on std::any");
+					return;
+				}
+				try
+				{
+					auto v = std::any_cast<long>(n);
+					on_update(v);
+				}
+				catch (const std::bad_any_cast& e)
+				{
+					ERR("Bad std::any_cast! : %s", e.what());
+				}
+			});
 		}
 	}
 
@@ -327,8 +338,9 @@ namespace h_gui::controls
 			}
 			const std::wstring ws(buff);
 			gui_manager::renderer->DrawStringC(ws,
-			                                  h_style::theme::text::font_size,
-			                                  {origin_.x + h_style::structural::base::margin, origin_.y}, h_style::theme::colors::base::fg);
+			                                   h_style::theme::text::font_size_m,
+			                                   {origin_.x + h_style::structural::base::margin, origin_.y},
+			                                   h_style::theme::colors::base::fg);
 		}
 
 		{
@@ -346,8 +358,8 @@ namespace h_gui::controls
 				},
 				1,
 				hovered_
-				? h_style::theme::colors::control::slider_hovered
-				: h_style::theme::colors::control::slider
+					? h_style::theme::colors::control::slider_hovered
+					: h_style::theme::colors::control::slider
 			);
 		}
 
@@ -359,6 +371,9 @@ namespace h_gui::controls
 		{
 			// slider handle
 
+			percent_ = static_cast<float>(*this->data_ - min_) / static_cast<float>(max_ - min_);
+			percent_ = percent_ < 0 ? 0 : percent_ > 1 ? 1.0f : percent_;
+
 			float x_pos = min_pos_x + ((max_pos_x - min_pos_x) * percent_);
 			gui_manager::renderer->DrawCustomEllipse(
 				{
@@ -368,8 +383,8 @@ namespace h_gui::controls
 				},
 				h_style::structural::base::margin,
 				h_style::structural::base::margin,
-				true, h_style::theme::colors::control::slider_handle, 0, {0,0,0,0}
-				
+				true, h_style::theme::colors::control::slider_handle, 0, {0, 0, 0, 0}
+
 			);
 		}
 
@@ -396,9 +411,9 @@ namespace h_gui::controls
 // tab
 namespace h_gui
 {
-	tab::tab(std::wstring text) : interactable({ 0, 0 }), text(std::move(text))
+	tab::tab(std::wstring text) : interactable({0, 0}), text(std::move(text))
 	{
-		size_ = { h_style::structural::window::control_groups_width, h_style::structural::window::control_groups_height };
+		size_ = {h_style::structural::window::control_groups_width, h_style::structural::window::control_groups_height};
 	}
 
 	blocks_count tab::render(uint64_t tick, LPPOINT cursor_pos)
@@ -408,16 +423,33 @@ namespace h_gui
 				origin_.x,
 				origin_.y,
 				origin_.x + size_.x,
+				origin_.y + size_.y - h_style::structural::space
+			}, true, 0, h_style::theme::colors::tab::tab_page, {});
+
+
+		gui_manager::renderer->DrawCustomRect(
+			{
+				origin_.x,
+				origin_.y + size_.y - h_style::structural::space,
+				origin_.x + h_style::structural::space,
 				origin_.y + size_.y
-			}, true, 0, { 1, 1, 0, 1 }, {});
+			}, true, 0, h_style::theme::colors::tab::tab_page, {});
 
-
+		gui_manager::renderer->DrawCustomRoundedRect(
+			D2D1::RoundedRect(
+				{
+					origin_.x,
+					origin_.y + size_.y - (h_style::structural::space * 2),
+					origin_.x + size_.x,
+					origin_.y + size_.y
+				}, h_style::theme::border_radius, h_style::theme::border_radius),
+			true, h_style::theme::colors::tab::tab_page, 0, {});
 
 		blocks_count blocks = 0;
 		int group_spaces = 0;
 		float vert_offset = 0;
 		bool is_second_column = false;
-		for (auto& group: groups_)
+		for (auto& group : groups_)
 		{
 			D2D1_POINT_2F group_pos =
 			{
@@ -465,18 +497,6 @@ namespace h_gui
 
 		// setup for next frame
 		expected_blocks = blocks;
-
-		static wchar_t buff[256];
-		if (swprintf(buff, 256, L"expected: %d", expected_blocks) < 0)
-		{
-			ERR("BAD swprintf on format string (slider_double)");
-		}
-		const std::wstring ws(buff);
-		
-		gui_manager::renderer->DrawStringC(ws, h_style::theme::text::font_size, 
-			{ origin_.x + (size_.x / 2), origin_.y + (size_.y / 2) }
-		, { 0,0,0,1 });
-
 		return 0;
 	}
 
@@ -491,7 +511,6 @@ namespace h_gui
 // tab_group
 namespace h_gui
 {
-
 	tab_group::tab_group(std::wstring text) : interactable({0, 0}), text(std::move(text))
 	{
 		size_ = {
@@ -503,7 +522,7 @@ namespace h_gui
 	blocks_count tab_group::render(uint64_t tick, LPPOINT cursor_pos)
 	{
 		gui_manager::renderer->DrawStringC(text,
-		                                   h_style::theme::text::font_size,
+		                                   h_style::theme::text::font_size_m,
 		                                   {origin_.x + (h_style::structural::base::margin * 4), origin_.y},
 		                                   hovered_
 			                                   ? h_style::theme::colors::base::fg_hi
@@ -514,37 +533,54 @@ namespace h_gui
 				origin_.x,
 				origin_.y,
 				origin_.x + size_.x,
-				origin_.y + size_.y
-			}, true, 0, { 0, 1, 0, 1 }, {});
+				origin_.y + size_.y - h_style::structural::space
+			}, true, 0, h_style::theme::colors::tab::select_bg, {});
+
+
+		// Shadow
+		{
+			gui_manager::renderer->DrawBitmap(gui_manager::res.BT_GRADIENT,
+			                                  {
+				                                  origin_.x,
+				                                  origin_.y + h_style::structural::window::tab_select_height -
+				                                  gui_manager::res.gradient_sz.y,
+				                                  origin_.x + size_.x,
+				                                  origin_.y + h_style::structural::window::tab_select_height,
+			                                  }, 0.6f);
+		}
 
 
 		float tab_width = h_style::structural::window::control_groups_width / tabs_.size();
 		int i = 0;
 		std::shared_ptr<tab> select_next = nullptr;
-		for (auto& tab: tabs_)
+		for (auto& tab : tabs_)
 		{
 			// draw tab select
 			{
-				D2D1_RECT_F tab_rect = { origin_.x + (tab_width * i) + h_style::structural::base::margin,
+				D2D1_RECT_F tab_rect = {
+					origin_.x + (tab_width * i) + h_style::structural::base::margin,
 					origin_.y,
 					origin_.x + (tab_width * i) + tab_width - h_style::structural::base::margin,
-					origin_.y + h_style::structural::window::tab_select_height };
-				D2D1_POINT_2F text_origin = { origin_.x + (tab_width * i) + h_style::structural::base::pad + h_style::structural::base::margin,
-						origin_.y,
+					origin_.y + h_style::structural::window::tab_select_height
 				};
 
-				if (tab != this->selected_tab_) {
-					bool select_hovered = cursor_pos->x < tab_rect.right && cursor_pos->x > tab_rect.left && cursor_pos->y > tab_rect.top && cursor_pos->y < tab_rect.bottom;
+				//TODO: Center
+				D2D1_POINT_2F text_origin = {
+					tab_rect.left + (tab_width / 2) - h_style::structural::base::margin,
+					tab_rect.top + (h_style::structural::window::tab_select_height / 2) + h_style::structural::base::pad
+				};
 
-					D2D1_COLOR_F hov = { 1,0,1,1 };
-					D2D1_COLOR_F no_hov = { 0,0,1,1 };
+				if (tab != this->selected_tab_)
+				{
+					bool select_hovered = cursor_pos->x < tab_rect.right && cursor_pos->x > tab_rect.left && cursor_pos
+						->y > tab_rect.top && cursor_pos->y < tab_rect.bottom;
 
+					gui_manager::renderer->DrawStringCenteredC(tab->text, h_style::theme::text::font_size_m,
+					                                           text_origin,
+					                                           select_hovered
+						                                           ? h_style::theme::colors::tab::text_unselected_hov
+						                                           : h_style::theme::colors::tab::text_unselected);
 
-					gui_manager::renderer->DrawCustomRect(
-						tab_rect, true, 0, select_hovered ? hov : no_hov, {});
-
-					gui_manager::renderer->DrawStringC(tab->text, h_style::theme::text::font_size,
-						text_origin, { 0,1,1,1 });
 					if (select_hovered && gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
 					{
 						select_next = tab;
@@ -552,21 +588,52 @@ namespace h_gui
 				}
 				else
 				{
-					gui_manager::renderer->DrawCustomRect(
-						tab_rect, true, 0, { 1,0,0,1 }, {});
+					//selected tab
 
-					gui_manager::renderer->DrawStringC(tab->text, h_style::theme::text::font_size, text_origin
-						, { 0,1,1,1 });
+					gui_manager::renderer->DrawCustomRect(
+						{
+							tab_rect.left + h_style::structural::tab::tab_grab_height - 1,
+							tab_rect.bottom - h_style::structural::tab::tab_grab_height,
+							tab_rect.right - h_style::structural::tab::tab_grab_height + 1,
+							tab_rect.bottom + h_style::structural::base::pad
+
+						}
+						, true, 0, h_style::theme::colors::tab::select_face, {});
+
+					gui_manager::renderer->DrawBitmap(
+						gui_manager::res.tab_edge_left,
+						{
+							tab_rect.left,
+							tab_rect.bottom - h_style::structural::tab::tab_grab_height,
+							tab_rect.left + h_style::structural::tab::tab_grab_height,
+							tab_rect.bottom + h_style::structural::base::pad
+						});
+
+					gui_manager::renderer->DrawBitmap(
+						gui_manager::res.tab_edge_right,
+						{
+							tab_rect.right - h_style::structural::tab::tab_grab_height,
+							tab_rect.bottom - h_style::structural::tab::tab_grab_height,
+							tab_rect.right,
+							tab_rect.bottom + h_style::structural::base::pad
+						});
+
+					gui_manager::renderer->DrawStringCenteredC(tab->text, h_style::theme::text::font_size_m, text_origin
+					                                           , h_style::theme::colors::tab::text_selected);
 				}
 			}
 
 			++i;
 
 			// only render selected tab contents
-			if (tab != this->selected_tab_) { tab->disable(); continue; }
+			if (tab != this->selected_tab_)
+			{
+				tab->disable();
+				continue;
+			}
 
 			// just under the tab select area
-			tab->set_origin({ origin_.x, origin_.y + h_style::structural::window::tab_select_height });
+			tab->set_origin({origin_.x, origin_.y + h_style::structural::window::tab_select_height});
 			if (!enabled_)
 			{
 				tab->disable();
@@ -588,7 +655,7 @@ namespace h_gui
 		}
 
 		// set next selected tab if tab was selected
-		if(select_next != nullptr)
+		if (select_next != nullptr)
 		{
 			this->selected_tab_ = select_next;
 		}
@@ -600,7 +667,7 @@ namespace h_gui
 	{
 		std::shared_ptr<tab> ptr = std::make_shared<tab>(label);
 		this->tabs_.emplace_back(ptr);
-		if(this->selected_tab_ == nullptr)
+		if (this->selected_tab_ == nullptr)
 		{
 			this->selected_tab_ = ptr;
 		}
@@ -612,39 +679,60 @@ namespace h_gui
 // section
 namespace h_gui
 {
-	section::section(std::wstring text) : interactable({0, 0})
+	section::section(std::wstring text, std::wstring img_path) : interactable({0, 0})
 	{
 		this->text = text;
 		size_ = {
-			h_style::structural::control_width
-			+ (h_style::structural::base::pad * 2),
-			h_style::structural::base::block_height
+			h_style::structural::control_width,
+			h_style::structural::base::block_height * 2
 		};
 		this->section_tabs = std::make_shared<tab_group>(text);
+		this->icon = globals::gui->create_resource_img(img_path);
 	}
 
 	blocks_count section::render(uint64_t tick, LPPOINT cursor_pos)
 	{
 		if (selected_)
 		{
-			gui_manager::renderer->DrawCustomRect(
-				{
-					origin_.x,
-					origin_.y,
-					origin_.x + h_style::structural::base::margin,
-					origin_.y + h_style::structural::base::margin
-				}, true, 0, {0, 1, 0, 1}, {});
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(
+					{
+						origin_.x,
+						origin_.y,
+						origin_.x + size_.x - h_style::structural::space,
+						origin_.y + size_.y
+					}, h_style::theme::border_radius, h_style::theme::border_radius),
+				true, h_style::theme::colors::section::selected_bg,
+				2, h_style::theme::colors::section::selected_stroke);
 		}
 
-		gui_manager::renderer->DrawStringC(text,
-		                                   h_style::theme::text::font_size,
-		                                   {origin_.x + (h_style::structural::base::margin * 4), origin_.y},
-		                                   hovered_
-			                                   ? h_style::theme::colors::base::fg_hi
-			                                   : h_style::theme::colors::base::fg);
+
+		gui_manager::renderer->DrawBitmap(this->icon,
+		                                  {
+			                                  origin_.x + h_style::structural::base::margin,
+			                                  origin_.y + (size_.y / 2) - (icon_sz.y / 2),
+			                                  origin_.x + h_style::structural::base::margin + icon_sz.x,
+			                                  origin_.y + (size_.y / 2) + (icon_sz.y / 2),
+		                                  },
+		                                  1);
 
 
-		return 1;
+		gui_manager::renderer->DrawStringCenteredC(text,
+		                                           h_style::theme::text::font_size_L,
+		                                           {
+
+			                                           origin_.x + ((size_.x - icon_sz.x) / 2),
+			                                           origin_.y + (size_.y / 2)
+
+		                                           },
+		                                           selected_
+			                                           ? h_style::theme::colors::section::text_selected
+			                                           : hovered_
+			                                           ? h_style::theme::colors::section::text_unselected_hov
+			                                           : h_style::theme::colors::section::text_unselected);
+
+
+		return 2;
 	}
 
 	bool section::was_just_selected(LPPOINT cursor_pos)
@@ -683,8 +771,9 @@ namespace h_gui
 	blocks_count sidebar_widget::render(uint64_t tick, LPPOINT cursor_pos)
 	{
 		gui_manager::renderer->DrawStringC(text,
-		                                  h_style::theme::text::font_size,
-		                                  {origin_.x + h_style::structural::base::margin, origin_.y}, h_style::theme::colors::base::fg);
+		                                   h_style::theme::text::font_size_m,
+		                                   {origin_.x + h_style::structural::base::margin, origin_.y},
+		                                   h_style::theme::colors::base::fg);
 
 		return 3;
 	}
@@ -705,15 +794,7 @@ namespace h_gui
 
 	blocks_count category::render(uint64_t tick, LPPOINT cursor_pos)
 	{
-		gui_manager::renderer->DrawStringC(text,
-		                                   h_style::theme::text::font_size,
-		                                   {origin_.x + h_style::structural::base::margin, origin_.y},
-		                                   hovered_
-			                                   ? h_style::theme::colors::base::fg_hi
-			                                   : h_style::theme::colors::base::fg);
-
-		blocks_count blocks = 2;
-
+		blocks_count blocks = 1;
 		auto selected_section = parent_window->get_selected_section();
 
 		for (auto& sec : sections_)
@@ -747,16 +828,15 @@ namespace h_gui
 
 			blocks += sec->render(tick, cursor_pos);
 		}
-
-		size_.y = blocks * h_style::structural::base::block_height;
+		size_.y = (blocks * h_style::structural::base::block_height);
 
 
 		return blocks;
 	}
 
-	std::shared_ptr<section> category::add_section(std::wstring text)
+	std::shared_ptr<section> category::add_section(std::wstring text, std::wstring img_path)
 	{
-		std::shared_ptr<section> ptr = std::make_shared<section>(text);
+		std::shared_ptr<section> ptr = std::make_shared<section>(text, img_path);
 		this->sections_.emplace_back(ptr);
 
 
@@ -786,23 +866,83 @@ namespace h_gui
 				true, h_style::theme::colors::base::bg, 1, h_style::theme::colors::window::border);
 		}
 
+		gui_manager::renderer->DrawStringCenteredC(title_,
+		                                           h_style::theme::text::font_size_m,
+		                                           {
+			                                           origin_.x + (size_.x / 2),
+			                                           origin_.y + (h_style::structural::window::top_bar_height / 2)
+		                                           }, h_style::theme::colors::base::fg);
 
-		gui_manager::renderer->DrawStringC(title_,
-		                                   h_style::theme::text::font_size,
-		                                   {
-			                                   origin_.x + (h_style::structural::base::margin * 2),
-			                                   origin_.y + (h_style::structural::base::margin * 2)
-		                                   }, h_style::theme::colors::base::fg);
 
-		uint16_t blocks_ct = 2; // for the window top bar
-		//TODO: Render top bar seperator
+		// render active tab group
+		if (this->currently_selected_section != nullptr)
+		{
+			auto tab_grp = this->currently_selected_section->get_tab_group_ptr();
+			tab_grp->set_origin(
+				{
+					origin_.x + h_style::structural::window::side_bar_width,
+					origin_.y + h_style::structural::window::top_bar_height
+				});
+			tab_grp->render(tick, cursor_pos);
+
+			if (hovered_)
+			{
+				tab_grp->calc_hovered(cursor_pos);
+			}
+			else
+			{
+				tab_grp->set_hovered(false);
+			}
+		}
+
+
+
+
+		// side bar separator
+		{
+			gui_manager::renderer->DrawLineC(
+				{
+					origin_.x + h_style::structural::window::side_bar_width,
+					origin_.y + h_style::structural::window::top_bar_height
+				},
+				{
+					origin_.x + h_style::structural::window::side_bar_width,
+					origin_.y + size_.y
+				},
+				2,
+				h_style::theme::colors::window::separator);
+		}
+		// Sidebar shadow
+		{
+			gui_manager::renderer->DrawBitmap(gui_manager::res.RL_GRADIENT,
+				{
+					origin_.x + h_style::structural::window::side_bar_width -
+					gui_manager::res.gradient_sz.x,
+					origin_.y + h_style::structural::window::top_bar_height,
+					origin_.x + h_style::structural::window::side_bar_width,
+					origin_.y + size_.y
+				}, 0.8f);
+		}
+
+		// top bar separator
+		{
+			float top_line_depth = origin_.y + h_style::structural::window::top_bar_height;
+			gui_manager::renderer->DrawLineC(
+				{origin_.x, top_line_depth},
+				{origin_.x + size_.x, top_line_depth},
+				2,
+				h_style::theme::colors::window::separator);
+		}
+
+
+		uint16_t blocks_ct = 0; // for the window top bar
 
 		//TODO: render top widget
-		//TODO: Render seperator
 
 		for (const auto& cat : categories_)
 		{
-			float vert_offset = (blocks_ct * (h_style::structural::base::block_height +
+			float vert_offset = h_style::structural::window::top_bar_height + (blocks_ct * (
+					h_style::structural::base::block_height +
 					h_style::structural::base::pad)) +
 				h_style::structural::base::pad;
 			cat->set_origin({origin_.x + h_style::structural::base::pad, origin_.y + vert_offset});
@@ -827,65 +967,58 @@ namespace h_gui
 
 			blocks_ct += cat->render(tick, cursor_pos);
 
-			//TODO: Render seperator
+			// Separator
+			{
+				vert_offset = h_style::structural::window::top_bar_height + (blocks_ct * (
+						h_style::structural::base::block_height +
+						h_style::structural::base::pad)) +
+					h_style::structural::base::pad;
+				gui_manager::renderer->DrawLineC(
+					{origin_.x,
+						origin_.y + vert_offset + h_style::structural::base::margin},
+					{origin_.x + h_style::structural::window::side_bar_width,
+						origin_.y + vert_offset + h_style::structural::base::margin },
+					2,
+					h_style::theme::colors::window::separator);
+			}
 		}
+
 		//TODO: Render BOTTOM WIDGET
 
-
-		if (this->currently_selected_section != nullptr)
-		{
-			auto tab_grp = this->currently_selected_section->get_tab_group_ptr();
-			tab_grp->set_origin(
-				{
-					origin_.x + h_style::structural::window::side_bar_width,
-					origin_.y + h_style::structural::window::top_bar_height
-				});
-			tab_grp->render(tick, cursor_pos);
-
-			if (hovered_) {
-				tab_grp->calc_hovered(cursor_pos);
-			}else
-			{
-				tab_grp->set_hovered(false);
-			}
-		}
-
-
-		//TODO: render shadows
-		//TODO: render area seperators on top of shadows
-
 		// Handle Dragging
-		if (hovered_ || being_dragged)
 		{
-			accent_color = anim::lerp_colf(accent_color, h_style::theme::colors::base::accent_b, 0.025f);
-			if (cursor_pos->y < origin_.y + h_style::structural::base::block_height || being_dragged)
+			if (hovered_ || being_dragged)
 			{
-				if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
+				accent_color = anim::lerp_colf(accent_color, h_style::theme::colors::base::accent_b, 0.025f);
+				if (cursor_pos->y < origin_.y + h_style::structural::base::block_height || being_dragged)
 				{
-					if (gui_manager::input->IsMouseButtonJustPressed(DiInputManager::vM_LEFTBTN))
+					if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
 					{
-						// store relative point
-						being_dragged = true;
-						drag_anchor_ = {
-							cursor_pos->x - this->origin_.x,
-							cursor_pos->y - this->origin_.y
-						};
-					}
+						if (gui_manager::input->IsMouseButtonJustPressed(DiInputManager::vM_LEFTBTN))
+						{
+							// store relative point
+							being_dragged = true;
+							drag_anchor_ = {
+								cursor_pos->x - this->origin_.x,
+								cursor_pos->y - this->origin_.y
+							};
+						}
 
-					this->origin_ = anim::lerp_2f(
-						this->origin_,
-						{cursor_pos->x - drag_anchor_.x, cursor_pos->y - drag_anchor_.y},
-						0.55f);
-				}
-				else
-				{
-					being_dragged = false;
+						this->origin_ = anim::lerp_2f(
+							this->origin_,
+							{cursor_pos->x - drag_anchor_.x, cursor_pos->y - drag_anchor_.y},
+							0.55f);
+					}
+					else
+					{
+						being_dragged = false;
+					}
 				}
 			}
-		}
-		else
-		{
-			accent_color = anim::lerp_colf(accent_color, h_style::theme::colors::base::accent_a, 0.025f);
+			else
+			{
+				accent_color = anim::lerp_colf(accent_color, h_style::theme::colors::base::accent_a, 0.025f);
+			}
 		}
 
 		return blocks_ct;
@@ -959,18 +1092,18 @@ namespace h_gui
 			h_style::structural::control_width
 			+ (h_style::structural::base::margin * 2)
 			+ (h_style::structural::base::pad * 2),
-			(blocks_ * (h_style::structural::base::block_height + h_style::structural::base::pad))
+			(blocks_ * (h_style::structural::base::block_height + h_style::structural::base::margin))
 			+ h_style::structural::base::margin
 		};
 
 
 		gui_manager::renderer->DrawStringC(label_,
-		                                  h_style::theme::text::font_size,
-		                                  {
-			                                  origin_.x + (h_style::structural::base::margin * 2) +
-			                                  h_style::structural::base::pad,
-			                                  origin_.y
-		                                  }, h_style::theme::colors::base::fg);
+		                                   h_style::theme::text::font_size_m,
+		                                   {
+			                                   origin_.x + (h_style::structural::base::margin * 2) +
+			                                   h_style::structural::base::pad,
+			                                   origin_.y
+		                                   }, h_style::theme::colors::base::fg);
 		// Border
 		{
 			auto border_color = h_style::theme::colors::group::border;
@@ -982,14 +1115,13 @@ namespace h_gui
 
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect({
-					origin_.x,
-					origin_.y,
-					origin_.x + size_.x,
-					origin_.y + size_.y
-					}, h_style::theme::border_radius, h_style::theme::border_radius),
-				true, { 1,0,1,1 }, 0, {}
+					                  origin_.x,
+					                  origin_.y,
+					                  origin_.x + size_.x,
+					                  origin_.y + size_.y
+				                  }, h_style::theme::border_radius, h_style::theme::border_radius),
+				true, h_style::theme::colors::group::bg, 1, h_style::theme::colors::group::bg_stroke
 			);
-
 		}
 
 		blocks_ = 1; // start at 1 for top label
@@ -997,7 +1129,7 @@ namespace h_gui
 		for (auto& ctrl : controls_)
 		{
 			float vert_offset = (blocks_ * (h_style::structural::base::block_height +
-				h_style::structural::base::pad)) - h_style::structural::base::pad;
+				h_style::structural::base::margin)) - h_style::structural::base::pad;
 
 			ctrl->set_origin({origin_.x + h_style::structural::base::margin, origin_.y + vert_offset});
 
@@ -1124,7 +1256,7 @@ namespace h_gui
 {
 	bool gui_manager::render(UINT32 region_width, UINT32 region_height, uint64_t tick, LPPOINT cursor_pos)
 	{
-		renderer->SetSolidColor({ 1,1,1,1 });
+		renderer->SetSolidColor({1, 1, 1, 1});
 		for (const auto& ws : workspaces_)
 		{
 			ws->render(region_width, region_height, tick, cursor_pos);
@@ -1139,11 +1271,41 @@ namespace h_gui
 		return ws;
 	}
 
+	void gui_manager::init_shared_res()
+	{
+		auto path = std::filesystem::temp_directory_path().parent_path().parent_path();
+		path /= "hGUI";
+		if (!std::filesystem::exists(path))
+		{
+			std::filesystem::create_directories(path);
+			// TODO: Copy images here? or maybe just skip all this and load from byte array.
+		}
+		res.tab_edge_left = gui_manager::renderer->CreateBitmapImageFromFile(path / "tab_edge_left.png");
+		res.tab_edge_right = gui_manager::renderer->CreateBitmapImageFromFile(path / "tab_edge_right.png");
+		res.RL_GRADIENT = gui_manager::renderer->CreateBitmapImageFromFile(path / "RL_GRADIENT.png");
+		res.BT_GRADIENT = gui_manager::renderer->CreateBitmapImageFromFile(path / "BT_GRADIENT.png");
+	}
+
+	Renderer::D2DBitmapID gui_manager::create_resource_img(std::wstring img_name)
+	{
+		auto path = std::filesystem::temp_directory_path().parent_path().parent_path();
+		path /= "hGUI";
+		if (!std::filesystem::exists(path))
+		{
+			std::filesystem::create_directories(path);
+			// TODO: Copy images here? or maybe just skip all this and load from byte array.
+		}
+
+		return gui_manager::renderer->CreateBitmapImageFromFile(path / img_name);
+	}
+
 	gui_manager::gui_manager(Renderer::D2DxOverlay* renderer, const std::shared_ptr<DiInputManager>& input_manager)
 	{
 		h_gui::gui_manager::renderer = renderer;
 		h_gui::gui_manager::input = input_manager;
 		gui_manager::renderer->SetSolidColor(h_style::theme::colors::base::fg);
+
+		init_shared_res();
 	}
 
 	gui_manager::~gui_manager()

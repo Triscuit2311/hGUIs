@@ -31,7 +31,6 @@ namespace Renderer {
 
 	private:
 
-
 		const std::wstring WindowName = L"d2win";
 		const std::wstring WindowClassName = L"d2cls";
 		const std::wstring FontName = L"Lucida Console";
@@ -204,6 +203,9 @@ namespace Renderer {
 		void DrawString(WCHAR const* str, UINT32 strLength, const float fontSize, const D2D1_POINT_2F origin);
 		void DrawString(std::wstring str, float fontSize, D2D1_POINT_2F origin);
 		void DrawStringC(std::wstring str, float fontSize, D2D1_POINT_2F origin, D2D1_COLOR_F col);
+		void DrawStringCenteredC(WCHAR const* str, UINT32 strLength, float fontSize, D2D1_POINT_2F origin,
+		                         D2D1_COLOR_F col);
+		void DrawStringCenteredC(std::wstring str, float fontSize, D2D1_POINT_2F origin, D2D1_COLOR_F col);
 
 
 		/**

@@ -10,9 +10,10 @@
 
 Renderer::D2DBitmapID splash_img;
 
-bool b;
+bool b[20] = {false};
 double dub = 99.0;
-long i32 = 123;
+long i32 = 13;
+double f64= 9.0;
 
 
 bool show_menu = true;
@@ -23,45 +24,58 @@ bool exit_thread = false;
 // Runs once at start-time, initializes all the windows, groups and controls for the GUI
 void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 {
-	auto win1 = ws->add_window(L"windonk 1", { 100, 100 });
+	auto win1 = ws->add_window(L"windonk 1", {100, 100});
 
-	auto c1 = win1->add_category(L"CAT1");
+	auto cat = win1->add_category(L"CAT1");
+	auto sec = cat->add_section(L"Global", L"globeico.png");
+	auto tab = sec->add_tab(L"General");
 
-	auto s1 = c1->add_section(L"Sec1");
-	auto t1 = s1->add_tab(L"TAB1");
-	auto g1 = t1->add_group(L"asd");
-	g1->button(L"BUTTON_WITH_ACTION", []() {LOG("BUTTON PRESSED"); });
-	g1->button(L"BUTTON_NO_ACTION");
+	auto grp = tab->add_group(L"Group1");
+	grp->toggle(&b[0], L"Toggle");
+	grp->toggle(&b[1], L"My");
+	grp->toggle(&b[2], L"Noggle");
+	grp->toggle(&b[3], L"Like");
+	grp->toggle(&b[4], L"Corn");
+	grp->toggle(&b[5], L"On a");
+	grp->toggle(&b[6], L"Coggle");
 
-	// g1->label(L"yeet");
-	 g1->toggle(&b, L"Too00gle");
+	grp = tab->add_group(L"Group1");
+	grp->toggle(&b[10], L"Huddle");
+	grp->toggle(&b[11], L"MY");
+	grp->toggle(&b[12], L"Buddle");
+	grp->toggle(&b[13], L"Like");
+	grp->toggle(&b[14], L"Corn");
+	grp->toggle(&b[15], L"In a");
+	grp->toggle(&b[16], L"Cuddle");
 
-	// auto g2 = t1->add_group(L"asd");
-	// g2->slider_long(&i32, -10, 10, L"Slippidy", [](long i){});
-
-
-
-	auto t2 = s1->add_tab(L"TAB2");
-	auto t3 = s1->add_tab(L"TAB3");
-
-	auto s2 = c1->add_section(L"Sec2");
-	auto t4 = s2->add_tab(L"TAB1");
-	auto t5 = s2->add_tab(L"TAB2");
+	grp = tab->add_group(L"Group1");
+	grp->slider_double(&f64, -10, 10, L"Slip Speed: %.2lf M/s", [](long i) {});
+	grp->slider_long(&i32, -120, 120, L"Slide %d mph", [](long i) {});
 
 
 
-	auto c2 = win1->add_category(L"CAT2");
+	cat = win1->add_category(L"CAT1");
+	sec = cat->add_section(L"Visuals", L"eye_1_ico.png");
+	tab = sec->add_tab(L"General");
+	grp = tab->add_group(L"Group1");
+	grp->slider_double(&f64, -10, 10, L"Slippy: %.2lf", [](long i) {});
+	grp->slider_long(&i32, -120, 120, L"Slidy [%ld]", [](long i) {});
+	tab = sec->add_tab(L"Advanced");
+	grp = tab->add_group(L"Group1");
+	grp->slider_double(&f64, -10, 10, L"Slippy: %.2lf", [](long i) {});
+	grp->slider_long(&i32, -120, 120, L"Slidy [%ld]", [](long i) {});
 
-	auto s3 = c2->add_section(L"Sec1");
-	auto _t1 = s3->add_tab(L"TAB1");
-	auto _t2 = s3->add_tab(L"TAB2");
-	auto _t3 = s3->add_tab(L"TAB3");
-	auto _t4 = s3->add_tab(L"TAB4");
-	auto _t5 = s3->add_tab(L"TAB5");
-	auto _t6 = s3->add_tab(L"TAB6");
-	auto _t7 = s3->add_tab(L"TAB7");
-	auto _t8 = s3->add_tab(L"TAB8");
-	auto _t9 = s3->add_tab(L"TAB9");
+	sec = cat->add_section(L"Item ESP", L"eye_2_ico.png");
+	tab = sec->add_tab(L"General");
+	grp = tab->add_group(L"Group1");
+	grp->slider_double(&f64, -10, 10, L"Slippy: %.2lf", [](long i) {});
+	grp->slider_long(&i32, -120, 120, L"Slidy [%ld]", [](long i) {});
+	tab = sec->add_tab(L"Advanced");
+	grp = tab->add_group(L"Group1");
+	grp->slider_double(&f64, -10, 10, L"Slippy: %.2lf", [](long i) {});
+	grp->slider_long(&i32, -120, 120, L"Slidy [%ld]", [](long i) {});
+
+
 
 
 	// c1->add_section(L"Sec3");
@@ -87,19 +101,13 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 }
 
 
-
 // Runs once at start-time, does all resource loading from disk
 void load_resources(Renderer::D2DxOverlay* renderer)
 {
-	auto path = std::filesystem::temp_directory_path().parent_path().parent_path();
-	path /= "hGUI";
-	if (!std::filesystem::exists(path))
-	{
-		std::filesystem::create_directories(path);
-		// TODO: Copy images here? or maybe just skip all this and load from byte array.
-	}
-	renderer->LoadSystemFontAsDefault(L"Jetbrains MONO"); // TODO: Load font from bytes
-	splash_img = renderer->CreateBitmapImageFromFile(path / "dealwithit_glow.png");
+
+	//renderer->LoadSystemFontAsDefault(L"Jetbrains MONO"); // TODO: Load font from bytes
+	renderer->LoadSystemFontAsDefault(L"Segoe UI"); // TODO: Load font from bytes
+	splash_img = h_gui::globals::gui->create_resource_img(L"dealwithit_glow.png");
 }
 
 
@@ -124,7 +132,7 @@ void pre_render(std::shared_ptr<DiInputManager> inputs, Renderer::D2DxOverlay* r
 // Draw directly to the screen BEHIND the main GUI
 void render_direct_pre(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::D2DxOverlay* renderer)
 {
-	renderer->DrawStringC(L"Triscuit2311", 8.0f, { 10,10 }, {1,1,1,1});
+	renderer->DrawStringC(L"Triscuit2311", 8.0f, {10, 10}, {1, 1, 1, 1});
 }
 
 // Draw the main GUI and gui components, only modify if needed
@@ -150,13 +158,12 @@ void render_direct_post(UINT32 width, UINT32 height, LPPOINT cur_pos, const Rend
 		if (curr_opac > 1.0f)
 		{
 			target_opac = -2.f;
-
 		}
 		renderer->DrawBitmap(splash_img,
-			{
-				width / 2.0f - 128.0f, height / 2.0f - 128.0f, width / 2.0f + 128.0f,
-				height / 2.0f + 128.0f
-			}, curr_opac);
+		                     {
+			                     width / 2.0f - 128.0f, height / 2.0f - 128.0f, width / 2.0f + 128.0f,
+			                     height / 2.0f + 128.0f
+		                     }, curr_opac);
 	}
 }
 
@@ -173,13 +180,14 @@ void init_once(Renderer::D2DxOverlay*& renderer, std::shared_ptr<DiInputManager>
 	{
 		inputs = std::make_unique<DiInputManager>();
 		inputs->Init(renderer->GetTargetHwndRef());
-		renderer->SetSolidColor({ 0.8f, 0.8f, 0.8f, 1 });
-
-		load_resources(renderer);
+		renderer->SetSolidColor({1, 1, 1, 1});
 
 		// Setup GUI
 		h_gui::globals::gui = std::make_unique<h_gui::gui_manager>(renderer, inputs);
 		h_gui::globals::invoker = std::make_unique<h_gui::async_invoker>();
+
+
+		load_resources(renderer);
 
 		auto ws1 = h_gui::globals::gui->add_workspace();
 		setup_gui(ws1);
@@ -211,7 +219,6 @@ void render_tick(UINT32 width, UINT32 height)
 
 
 	init_once(renderer, inputs);
-
 
 
 	inputs->UpdateDeviceStates();

@@ -137,6 +137,9 @@ namespace h_gui
 			bool* state;
 			invoker_id on_enable = 0;
 			invoker_id on_disable = 0;
+			D2D1_COLOR_F marker_bg = { h_style::theme::colors::control::toggle_bg_off };
+			D2D1_COLOR_F marker_fg = { h_style::theme::colors::control::toggle_marker_off };
+			D2D1_POINT_2F marker_offset = { -1,-1 };
 
 		public:
 			toggle(bool* data, std::wstring label,
@@ -266,8 +269,12 @@ namespace h_gui
 		std::wstring text;
 		bool selected_ = false;
 		std::shared_ptr<tab_group> section_tabs = nullptr;
+		const D2D1_POINT_2F icon_sz = {35,35};
+		Renderer::D2DBitmapID icon;
+
+
 	public:
-		section(std::wstring text);
+		section(std::wstring text, std::wstring img_name);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		bool was_just_selected(LPPOINT cursor_pos);
 		std::shared_ptr<tab_group> get_tab_group_ptr();
@@ -284,7 +291,7 @@ namespace h_gui
 	public:
 		category(std::wstring text, std::shared_ptr<window> parent);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
-		std::shared_ptr<section> add_section(std::wstring text);
+		std::shared_ptr<section> add_section(std::wstring text, std::wstring img_path);
 	};
 
 
@@ -333,18 +340,32 @@ namespace h_gui
 		void render(UINT32 region_width, UINT32 region_height, uint64_t tick, LPPOINT cursor_pos);
 	};
 
+
+	struct loaded_resources
+	{
+		Renderer::D2DBitmapID tab_edge_left = 0;
+		Renderer::D2DBitmapID tab_edge_right = 0;
+
+		const D2D1_POINT_2F gradient_sz = { 30,30 };
+		Renderer::D2DBitmapID RL_GRADIENT = 0;
+		Renderer::D2DBitmapID BT_GRADIENT = 0;
+
+	};
+
 	class gui_manager
 	{
 	private:
 		std::vector<std::shared_ptr<workspace>> workspaces_{};
-
-	public:
+		public:
 		inline static Renderer::D2DxOverlay* renderer = nullptr;
 		inline static std::shared_ptr<DiInputManager> input = nullptr;
+		inline static loaded_resources res = {};
 
 
 		bool render(UINT32 region_width, UINT32 region_height, uint64_t tick, LPPOINT cursor_pos);
 		std::shared_ptr<workspace> add_workspace();
+		void init_shared_res();
+		Renderer::D2DBitmapID create_resource_img(std::wstring img_name);
 
 		gui_manager(Renderer::D2DxOverlay* renderer, const std::shared_ptr<DiInputManager>& input_manager);
 		~gui_manager();

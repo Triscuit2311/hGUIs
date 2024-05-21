@@ -20,7 +20,7 @@ double f64a = 99999.0;
 
 
 bool show_menu = false;
-bool use_desktop_blur = true;
+bool use_desktop_blur = false; //broken in windows 11
 bool block_inputs_in_menu = true;
 bool exit_thread = false;
 

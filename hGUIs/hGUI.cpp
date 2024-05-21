@@ -539,14 +539,14 @@ namespace h_gui
 
 		// Shadow
 		{
-			gui_manager::renderer->DrawBitmap(gui_manager::res.BT_GRADIENT,
-			                                  {
-				                                  origin_.x,
-				                                  origin_.y + h_style::structural::window::tab_select_height -
-				                                  gui_manager::res.gradient_sz.y,
-				                                  origin_.x + size_.x,
-				                                  origin_.y + h_style::structural::window::tab_select_height,
-			                                  }, 0.6f);
+			// gui_manager::renderer->DrawBitmap(gui_manager::res.BT_GRADIENT,
+			//                                   {
+			// 	                                  origin_.x,
+			// 	                                  origin_.y + h_style::structural::window::tab_select_height -
+			// 	                                  gui_manager::res.gradient_sz.y,
+			// 	                                  origin_.x + size_.x,
+			// 	                                  origin_.y + h_style::structural::window::tab_select_height,
+			//                                   }, 0.6f);
 		}
 
 
@@ -600,23 +600,23 @@ namespace h_gui
 						}
 						, true, 0, h_style::theme::colors::tab::select_face, {});
 
-					gui_manager::renderer->DrawBitmap(
-						gui_manager::res.tab_edge_left,
-						{
-							tab_rect.left,
-							tab_rect.bottom - h_style::structural::tab::tab_grab_height,
-							tab_rect.left + h_style::structural::tab::tab_grab_height,
-							tab_rect.bottom + h_style::structural::base::pad
-						});
-
-					gui_manager::renderer->DrawBitmap(
-						gui_manager::res.tab_edge_right,
-						{
-							tab_rect.right - h_style::structural::tab::tab_grab_height,
-							tab_rect.bottom - h_style::structural::tab::tab_grab_height,
-							tab_rect.right,
-							tab_rect.bottom + h_style::structural::base::pad
-						});
+					// gui_manager::renderer->DrawBitmap(
+					// 	gui_manager::res.tab_edge_left,
+					// 	{
+					// 		tab_rect.left,
+					// 		tab_rect.bottom - h_style::structural::tab::tab_grab_height,
+					// 		tab_rect.left + h_style::structural::tab::tab_grab_height,
+					// 		tab_rect.bottom + h_style::structural::base::pad
+					// 	});
+					//
+					// gui_manager::renderer->DrawBitmap(
+					// 	gui_manager::res.tab_edge_right,
+					// 	{
+					// 		tab_rect.right - h_style::structural::tab::tab_grab_height,
+					// 		tab_rect.bottom - h_style::structural::tab::tab_grab_height,
+					// 		tab_rect.right,
+					// 		tab_rect.bottom + h_style::structural::base::pad
+					// 	});
 
 					gui_manager::renderer->DrawStringCenteredC(tab->text, h_style::theme::text::font_size_m, text_origin
 					                                           , h_style::theme::colors::tab::text_selected);
@@ -707,14 +707,14 @@ namespace h_gui
 		}
 
 
-		gui_manager::renderer->DrawBitmap(this->icon,
-		                                  {
-			                                  origin_.x + h_style::structural::base::margin,
-			                                  origin_.y + (size_.y / 2) - (icon_sz.y / 2),
-			                                  origin_.x + h_style::structural::base::margin + icon_sz.x,
-			                                  origin_.y + (size_.y / 2) + (icon_sz.y / 2),
-		                                  },
-		                                  1);
+		// gui_manager::renderer->DrawBitmap(this->icon,
+		//                                   {
+		// 	                                  origin_.x + h_style::structural::base::margin,
+		// 	                                  origin_.y + (size_.y / 2) - (icon_sz.y / 2),
+		// 	                                  origin_.x + h_style::structural::base::margin + icon_sz.x,
+		// 	                                  origin_.y + (size_.y / 2) + (icon_sz.y / 2),
+		//                                   },
+		//                                   1);
 
 
 		gui_manager::renderer->DrawStringCenteredC(text,
@@ -914,14 +914,14 @@ namespace h_gui
 		}
 		// Sidebar shadow
 		{
-			gui_manager::renderer->DrawBitmap(gui_manager::res.RL_GRADIENT,
-				{
-					origin_.x + h_style::structural::window::side_bar_width -
-					gui_manager::res.gradient_sz.x,
-					origin_.y + h_style::structural::window::top_bar_height,
-					origin_.x + h_style::structural::window::side_bar_width,
-					origin_.y + size_.y
-				}, 0.8f);
+			// gui_manager::renderer->DrawBitmap(gui_manager::res.RL_GRADIENT,
+			// 	{
+			// 		origin_.x + h_style::structural::window::side_bar_width -
+			// 		gui_manager::res.gradient_sz.x,
+			// 		origin_.y + h_style::structural::window::top_bar_height,
+			// 		origin_.x + h_style::structural::window::side_bar_width,
+			// 		origin_.y + size_.y
+			// 	}, 0.8f);
 		}
 
 		// top bar separator

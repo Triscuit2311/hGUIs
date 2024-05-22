@@ -38,7 +38,9 @@ namespace Renderer {
 		static D2DxOverlay* Instance; // Singleton instance
 
 		// Windows flags used for creating the overlay window
-		DWORD WindowFlags = (WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW);
+		DWORD WindowFlags = (WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_COMPOSITED);
+
+
 
 		D2D1_SIZE_U DesktopSize = {};
 
@@ -49,6 +51,7 @@ namespace Renderer {
 		// Direct2D Primary
 		ID2D1Factory* m_D2D1Factory = nullptr;
 		ID2D1HwndRenderTarget* m_D2D1RenderTarget = nullptr;
+
 
 		// Solid Brush
 		ID2D1SolidColorBrush* m_D2D1SolidColorBrush = nullptr;

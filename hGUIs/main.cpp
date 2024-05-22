@@ -20,7 +20,7 @@ double f64a = 99999.0;
 
 
 bool show_menu = false;
-bool use_desktop_blur = false; //broken in windows 11
+bool use_desktop_blur = true; //broken in windows 11
 bool block_inputs_in_menu = true;
 bool exit_thread = false;
 
@@ -39,8 +39,8 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 	grp->toggle(&b[12], L"Buddle");
 	grp->toggle(&b[0], L"Toggle");
 
-	 grp->modal_selection(&selection, L"Selected Option: %s",
-	 	L"YEET", { L"op1", L"op2", L"op3" }, win1);
+	 grp->modal_selection(&selection, L"Aim Bone: %s",
+	 	L"Select Aim Bone", { L"Head", L"Neck", L"Chest", L"Pelvis", L"Wiener", L"Extremities"}, win1);
 
 	// grp->toggle(&b[1], L"My");
 	// grp->toggle(&b[2], L"Noggle");

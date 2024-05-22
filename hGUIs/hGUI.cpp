@@ -879,7 +879,7 @@ namespace h_gui
 
 
 
-		blocks_count blocks = 1;
+		blocks_count blocks = 0;
 		auto get_option_rect = [this, &blocks]()
 			{
 				D2D1_RECT_F loc = {
@@ -892,7 +892,14 @@ namespace h_gui
 			};
 
 		D2D1_RECT_F loc = get_option_rect();
-		for (auto& op : options)
+		blocks++;
+
+		gui_manager::renderer->DrawStringCenteredC(this->text,
+			h_style::theme::text::font_size_m,
+			{ loc.left + ((loc.right - loc.left) / 2), loc.top + ((loc.bottom - loc.top) / 2) },
+			h_style::theme::colors::base::fg_hi);
+
+		for (size_t i = 0; i < options.size(); ++i)
 		{
 			loc = get_option_rect();
 
@@ -900,23 +907,30 @@ namespace h_gui
 
 			if (enabled_ && hovered_ && windows_utils::is_point_in_rect(loc, cursor_pos) ){
 
-
 				//{ loc.left, loc.top + h_style::structural::base::pad }, { loc.right, loc.top + h_style::structural::base::pad }
 				gui_manager::renderer->DrawCustomRect({ loc.left, loc.top + h_style::structural::base::pad, loc.right, loc.bottom + h_style::structural::base::pad }, true, 0, { 1,1,1,0.05f }, {});
 
-				gui_manager::renderer->DrawStringCenteredC(op.c_str(),
+				gui_manager::renderer->DrawStringCenteredC(options[i].c_str(),
 					h_style::theme::text::font_size_m,
 					{ loc.left + ((loc.right - loc.left) / 2), loc.top + ((loc.bottom - loc.top) / 2) },
-					h_style::theme::colors::base::fg_hi
-				);
+					h_style::theme::colors::base::fg_hi);
+
+				if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN)) {
+					*data = i;
+					this->button_ptr->set_option_text(options.at(i));
+					this->modal_target_window->end_modal();
+				}
+
 			}else
 			{
-				gui_manager::renderer->DrawStringCenteredC(op.c_str(),
+				gui_manager::renderer->DrawStringCenteredC(options[i].c_str(),
 					h_style::theme::text::font_size_m,
 					{ loc.left + ((loc.right - loc.left) / 2), loc.top + ((loc.bottom - loc.top) / 2) },
 					h_style::theme::colors::base::fg
 				);
 			}
+
+
 
 
 			blocks++;
@@ -926,19 +940,21 @@ namespace h_gui
 
 
 
-		if (hovered_ && enabled_)
-		{
-			if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
-			{
-				// Remove modal
-				//TODO:: Fade out
-				this->modal_target_window->end_modal();
+		// if (hovered_ && enabled_)
+		// {
+		// 	if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
+		// 	{
+		// 		// Remove modal
+		// 		//TODO:: Fade out
+		// 		this->modal_target_window->end_modal();
+		//
+		// 		//update button
+		// 		this->button_ptr->set_option_text(options.at(*data));
+		// 	}
+		// }
 
-				//update button
-				this->button_ptr->set_option_text(options.at(*data));
-			}
-		}
-		return 5;
+		return blocks;
+
 	}
 }
 
@@ -1175,7 +1191,11 @@ namespace h_gui
 						h_style::theme::border_radius),
 					true, h_style::theme::colors::window::blocked_by_modal, 1, h_style::theme::colors::window::border);
 			}
-			current_modal_selector->set_origin(this->origin_);
+			current_modal_selector->set_origin(
+				{
+					origin_.x + (size_.x/2) - (h_style::structural::control_width/2),
+					origin_.y + (size_.y/2) - (current_modal_selector->get_size().y/2),
+				});
 
 			current_modal_selector->calc_hovered(cursor_pos);
 			current_modal_selector->render(tick, cursor_pos);

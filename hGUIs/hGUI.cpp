@@ -114,6 +114,7 @@ namespace h_gui::controls
 		{
 			*state = !*state;
 			globals::invoker->invoke(*state ? this->on_enable : this->on_disable, std::any{});
+			gui_manager::input->DeBounce();
 		}
 
 
@@ -170,6 +171,7 @@ namespace h_gui::controls
 			if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
 			{
 				globals::invoker->invoke(this->action, std::any{});
+				gui_manager::input->DeBounce();
 			}
 			else if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
 			{
@@ -293,6 +295,7 @@ namespace h_gui::controls
 
 				any_data_.emplace<double>(*this->data_);
 				globals::invoker->invoke(this->on_update_, any_data_);
+
 			}
 		}
 
@@ -832,6 +835,7 @@ namespace h_gui
 			if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
 			{
 				this->modal_target_window->set_modal(this->modal_ptr);
+				gui_manager::input->DeBounce();
 			}
 			else if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
 			{
@@ -915,10 +919,11 @@ namespace h_gui
 					{ loc.left + ((loc.right - loc.left) / 2), loc.top + ((loc.bottom - loc.top) / 2) },
 					h_style::theme::colors::base::fg_hi);
 
-				if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN)) {
+				if (gui_manager::input->IsMouseButtonJustPressed(DiInputManager::vM_LEFTBTN)) {
 					*data = i;
 					this->button_ptr->set_option_text(options.at(i));
 					this->modal_target_window->end_modal();
+					gui_manager::input->DeBounce();
 				}
 
 			}else

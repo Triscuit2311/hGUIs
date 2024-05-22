@@ -229,6 +229,12 @@ void DiInputManager::Init(const HWND hostWindow)
 
 void DiInputManager::UpdateDeviceStates()
 {
+	auto curr = std::chrono::system_clock::now();
+	if(std::chrono::duration_cast<std::chrono::milliseconds>(curr - debounce_time).count() >= debounce_length)
+	{
+		in_debounce_cycle = false;
+	}
+
 	HRESULT result = m_DiKeyboardDevice->GetDeviceState(
 		sizeof(m_CurrentKeyboardState),
 		&m_CurrentKeyboardState);
@@ -262,6 +268,8 @@ void DiInputManager::ReacquireDevices() const
 
 bool DiInputManager::IsInputDown(const DiInput input) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	if (input > 0xEE)
 		return IsMouseButtonDown(input);
 	return IsKeyDown(input);
@@ -269,6 +277,8 @@ bool DiInputManager::IsInputDown(const DiInput input) const
 
 bool DiInputManager::IsInputUp(const DiInput input) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	if (input > 0xEE)
 		return IsMouseButtonUp(input);
 	return IsKeyUp(input);
@@ -276,6 +286,8 @@ bool DiInputManager::IsInputUp(const DiInput input) const
 
 bool DiInputManager::IsInputJustPressed(const DiInput input) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	if (input > 0xEE)
 		return IsMouseButtonJustPressed(input);
 	return IsKeyJustPressed(input);
@@ -283,6 +295,8 @@ bool DiInputManager::IsInputJustPressed(const DiInput input) const
 
 bool DiInputManager::IsInputJustReleased(const DiInput input) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	if (input > 0xEE)
 		return IsMouseButtonJustReleased(input);
 	return IsKeyJustReleased(input);
@@ -290,28 +304,38 @@ bool DiInputManager::IsInputJustReleased(const DiInput input) const
 
 bool DiInputManager::IsKeyDown(const DiInput key) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	return IsStateByteSet(m_CurrentKeyboardState[key]);
 }
 
 bool DiInputManager::IsKeyUp(const DiInput key) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	return !IsStateByteSet(m_CurrentKeyboardState[key]);
 }
 
 bool DiInputManager::IsKeyJustPressed(const DiInput key) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	return IsStateByteSet(m_CurrentKeyboardState[key])
 		&& !IsStateByteSet(m_LastKeyboardState[key]);
 }
 
 bool DiInputManager::IsKeyJustReleased(const DiInput key) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	return !IsStateByteSet(m_CurrentKeyboardState[key])
 		&& IsStateByteSet(m_LastKeyboardState[key]);
 }
 
 bool DiInputManager::IsKeyCombinationJustPressed(const std::vector<DiInput>& keys) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	// Initialize the flag to false
 	bool justPressedFlag = false;
 
@@ -346,28 +370,36 @@ bool DiInputManager::IsKeyCombinationJustPressed(const std::vector<DiInput>& key
 
 bool DiInputManager::IsMouseButtonDown(const DiInput button) const
 {
+	if (in_debounce_cycle) { return false; }
 	return IsStateByteSet(m_CurrentMouseState.rgbButtons[CompMouseEnum(button)]);
 }
 
 bool DiInputManager::IsMouseButtonUp(const DiInput button) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	return !IsStateByteSet(m_CurrentMouseState.rgbButtons[CompMouseEnum(button)]);
 }
 
 bool DiInputManager::IsMouseButtonJustPressed(const DiInput button) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	return IsStateByteSet(m_CurrentMouseState.rgbButtons[CompMouseEnum(button)])
 		&& !IsStateByteSet(m_LastMouseState.rgbButtons[CompMouseEnum(button)]);
 }
 
 bool DiInputManager::IsMouseButtonJustReleased(const DiInput button) const
 {
+	if (in_debounce_cycle) { return false; }
+
 	return !IsStateByteSet(m_CurrentMouseState.rgbButtons[CompMouseEnum(button)])
 		&& IsStateByteSet(m_LastMouseState.rgbButtons[CompMouseEnum(button)]);
 }
 
 bool DiInputManager::HasMouseMoved() const
 {
+	if (in_debounce_cycle) { return false; }
 	return m_CurrentMouseState.lX != 0 || m_CurrentMouseState.lY != 0;
 }
 
@@ -389,6 +421,12 @@ long DiInputManager::GetMouseDeltaY() const
 long DiInputManager::GetScrollWheelDelta() const
 {
 	return m_CurrentMouseState.lZ;
+}
+
+void DiInputManager::DeBounce()
+{
+	this->debounce_time = std::chrono::system_clock::now();
+	in_debounce_cycle = true;
 }
 
 
@@ -432,6 +470,7 @@ std::pair<DiInputManager::DiInput, std::string> DiInputManager::GetNextInputInte
 				return keyPair;
 			}
 		}
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(cycleLatencyMs));
 
 		if (cycleTimeout > 0 && cycleTimeout < cycles)
@@ -439,6 +478,8 @@ std::pair<DiInputManager::DiInput, std::string> DiInputManager::GetNextInputInte
 			INF("Breaking getinput early.");
 			break;
 		}
+
+
 
 		cycles++;
 	}

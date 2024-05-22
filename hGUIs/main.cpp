@@ -38,8 +38,9 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 
 	grp->toggle(&b[12], L"Buddle");
 	grp->toggle(&b[0], L"Toggle");
-
-	 grp->modal_selection(&selection, L"Aim Bone: %s",
+	grp->slider_double(&f64, -10, 10, L"Slip Speed: %.2lf M/s", [](long i) {});
+	grp->slider_long(&i32, -120, 120, L"Slide %d mph", [](long i) {});
+	grp->modal_selection(&selection, L"Aim Bone: %s",
 	 	L"Select Aim Bone", { L"Head", L"Neck", L"Chest", L"Pelvis", L"Wiener", L"Extremities"}, win1);
 
 	// grp->toggle(&b[1], L"My");

@@ -230,6 +230,10 @@ public:
 	};
 
 	std::map<DiInput, std::string> DiKeyNames;
+	std::chrono::time_point<std::chrono::system_clock> debounce_time{};
+	unsigned long long debounce_length = 300;
+	bool in_debounce_cycle = false;
+
 
 private:
 	LPDIRECTINPUT8 m_DirectInputInstance;
@@ -426,6 +430,8 @@ public:
 	 * @return The scroll wheel delta, which can be positive, negative, or zero.
 	 */
 	long GetScrollWheelDelta() const;
+
+	void DeBounce();
 
 	/**
 	 * Waits for the next keyboard event and returns information about it.

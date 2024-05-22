@@ -432,7 +432,7 @@ std::pair<DiInputManager::DiInput, std::string> DiInputManager::GetNextInputInte
 				return keyPair;
 			}
 		}
-		Sleep(cycleLatencyMs);
+		std::this_thread::sleep_for(std::chrono::milliseconds(cycleLatencyMs));
 
 		if (cycleTimeout > 0 && cycleTimeout < cycles)
 		{

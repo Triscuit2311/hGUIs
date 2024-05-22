@@ -1,10 +1,4 @@
 #pragma once
-#include <any>
-#include <functional>
-#include <mutex>
-#include <thread>
-#include <variant>
-
 
 #include "D2xOverlay.h"
 #include "DiInputManager.h"
@@ -12,6 +6,7 @@
 
 namespace h_gui
 {
+	class modal_selector;
 	class gui_manager;
 	class async_invoker;
 	class workspace;
@@ -125,7 +120,6 @@ namespace h_gui
 		class label final : public control
 		{
 			std::wstring text;
-
 		public:
 			label(std::wstring text);
 			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
@@ -133,26 +127,30 @@ namespace h_gui
 
 		class toggle final : public control
 		{
-			std::wstring label;
+			std::wstring text;
 			bool* state;
 			invoker_id on_enable = 0;
 			invoker_id on_disable = 0;
-			D2D1_COLOR_F marker_bg = { h_style::theme::colors::control::toggle_bg_off };
-			D2D1_COLOR_F marker_fg = { h_style::theme::colors::control::toggle_marker_off };
-			D2D1_POINT_2F marker_offset = { -1,-1 };
+			D2D1_COLOR_F marker_bg = {h_style::theme::colors::control::toggle_bg_off};
+			D2D1_COLOR_F marker_fg = {h_style::theme::colors::control::toggle_marker_off};
+			D2D1_POINT_2F marker_offset = {-1, -1};
 			inline static const float toggle_anim_alpha = 0.04f;
 
 		public:
 			toggle(bool* data, std::wstring label,
-			       const std::function<void()>& on_enabled = []{},
-			       const std::function<void()>& on_disabled = []{});
+			       const std::function<void()>& on_enabled = []
+			       {
+			       },
+			       const std::function<void()>& on_disabled = []
+			       {
+			       });
 
 			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		};
 
 		class button final : public control
 		{
-			std::wstring label;
+			std::wstring text;
 			invoker_id action = 0;
 
 		public:
@@ -160,17 +158,15 @@ namespace h_gui
 			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		};
 
-
 		class slider_double final : public control
 		{
 			// all sliders use 0.0f-1.0f for frontend
 			// interpolate between provided min/max based on %
 			float percent_ = 0.5f;
-
+			std::wstring text;
 			double* data_;
 			double min_;
 			double max_;
-			std::wstring label;
 			std::any any_data_ = {};
 
 			invoker_id on_update_ = 0;
@@ -186,11 +182,10 @@ namespace h_gui
 			// all sliders use 0.0f-1.0f for frontend
 			// interpolate between provided min/max based on %
 			float percent_ = 0.5f;
-
+			std::wstring text;
 			long* data_;
 			long min_;
 			long max_;
-			std::wstring label;
 			std::any any_data_ = {};
 
 			invoker_id on_update_ = 0;
@@ -199,6 +194,28 @@ namespace h_gui
 			slider_long(long* data, long min, long max, std::wstring label,
 			            const std::function<void(long)>& on_update = {});
 			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
+		};
+
+
+		class selection_button final : public control
+		{
+			std::shared_ptr<modal_selector> modal_ptr;
+			std::shared_ptr<window> modal_target_window;
+			std::wstring fmt;
+			std::wstring text;
+		public:
+			selection_button(std::wstring label, std::wstring fmt, std::shared_ptr<modal_selector> modal_ptr, const std::shared_ptr<window>& modal_target_window) : control(),
+				modal_ptr(modal_ptr), modal_target_window(modal_target_window), fmt(fmt)
+			{
+				text = std::move(label);
+				size_ = {
+					h_style::structural::control_width
+					+ (h_style::structural::base::pad * 2),
+					h_style::structural::base::block_height * 2
+				};
+			}
+			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
+			void set_option_text(std::wstring text);
 		};
 	}
 
@@ -211,6 +228,7 @@ namespace h_gui
 		bool named_;
 
 		std::vector<std::shared_ptr<control>> controls_{};
+		std::vector<std::shared_ptr<modal_selector>> modals{};
 
 	public:
 		control_group() : interactable({}, true), renderable(), collapsible_(false), named_(false)
@@ -240,12 +258,30 @@ namespace h_gui
 		std::shared_ptr<control> slider_long(long* data, long min, long max, std::wstring label,
 		                                     const std::function<void(long)>& on_update);
 		std::shared_ptr<control> button(std::wstring label, const std::function<void()>& action = {});
+
+		std::shared_ptr<control> modal_selection(size_t* data, std::wstring button_label_fmt, 
+			std::wstring modal_label, std::vector<std::wstring> options, std::shared_ptr<window> modal_target);
 	};
+
+	class modal_selector : public interactable, public renderable
+	{
+		std::wstring text;
+		std::vector<std::wstring> options;
+		std::shared_ptr<controls::selection_button> button_ptr;
+		std::shared_ptr<window> modal_target_window;
+		size_t* data;
+	public:
+		modal_selector(size_t* data, const std::wstring& text, std::vector<std::wstring> options, std::shared_ptr<window> window);
+		void bind_to_button(std::shared_ptr<controls::selection_button> ptr);
+		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
+	};
+
 
 	class tab : public interactable, public renderable
 	{
 		std::vector<std::shared_ptr<control_group>> groups_;
 		blocks_count expected_blocks = 0;
+
 	public:
 		std::wstring text;
 		tab(std::wstring text);
@@ -258,21 +294,20 @@ namespace h_gui
 		std::wstring text;
 		std::vector<std::shared_ptr<tab>> tabs_;
 		std::shared_ptr<tab> selected_tab_ = nullptr;
+
 	public:
 		tab_group(std::wstring text);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		std::shared_ptr<tab> add_tab(std::wstring label);
 	};
 
-
 	class section : public interactable, public renderable
 	{
 		std::wstring text;
 		bool selected_ = false;
 		std::shared_ptr<tab_group> section_tabs = nullptr;
-		const D2D1_POINT_2F icon_sz = {35,35};
+		const D2D1_POINT_2F icon_sz = {35, 35};
 		Renderer::D2DBitmapID icon;
-
 
 	public:
 		section(std::wstring text, std::wstring img_name);
@@ -283,50 +318,55 @@ namespace h_gui
 		void set_selected(bool selected);
 	};
 
-
 	class category : public interactable, public renderable
 	{
 		std::vector<std::shared_ptr<section>> sections_{};
 		std::wstring text;
 		std::shared_ptr<window> parent_window = nullptr;
+
 	public:
 		category(std::wstring text, std::shared_ptr<window> parent);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		std::shared_ptr<section> add_section(std::wstring text, std::wstring img_path);
 	};
 
-
 	class sidebar_widget : public interactable, public renderable
 	{
 		std::wstring text;
+
 	public:
 		sidebar_widget(std::wstring text);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 	};
 
-
 	class window : public interactable, public renderable, public std::enable_shared_from_this<window>
 	{
 	private:
 		std::shared_ptr<section> currently_selected_section = nullptr;
+		std::shared_ptr<modal_selector> current_modal_selector = nullptr;
 		std::vector<std::shared_ptr<category>> categories_{};
 		std::shared_ptr<sidebar_widget> sb_widget_top = std::make_shared<sidebar_widget>(L"TOP WIDGET");
 		std::shared_ptr<sidebar_widget> sb_widget_bottom = std::make_shared<sidebar_widget>(L"BOTTOM WIDGET");
 		std::wstring title_;
 		D2D1_POINT_2F drag_anchor_ = {};
 		bool being_dragged = false;
+
 	public:
 		window(std::wstring title, const D2D1_POINT_2F& origin, const bool enabled = true)
 			: interactable({origin.x, origin.y}, enabled),
 			  title_(std::move(title))
 		{
 			size_ = {
-				h_style::structural::window::width, h_style::structural::window::height};
+				h_style::structural::window::width, h_style::structural::window::height
+			};
 		}
+
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		std::shared_ptr<category> add_category(const std::wstring& label);
 		void set_selected_tab_group(std::shared_ptr<section> section);
 		std::shared_ptr<section> get_selected_section();
+		void set_modal(std::shared_ptr<modal_selector> ptr);
+		void end_modal();
 	};
 
 	class workspace
@@ -341,23 +381,22 @@ namespace h_gui
 		void render(UINT32 region_width, UINT32 region_height, uint64_t tick, LPPOINT cursor_pos);
 	};
 
-
 	struct loaded_resources
 	{
 		Renderer::D2DBitmapID tab_edge_left = 0;
 		Renderer::D2DBitmapID tab_edge_right = 0;
 
-		const D2D1_POINT_2F gradient_sz = { 30,30 };
+		const D2D1_POINT_2F gradient_sz = {30, 30};
 		Renderer::D2DBitmapID RL_GRADIENT = 0;
 		Renderer::D2DBitmapID BT_GRADIENT = 0;
-
 	};
 
 	class gui_manager
 	{
 	private:
 		std::vector<std::shared_ptr<workspace>> workspaces_{};
-		public:
+
+	public:
 		inline static Renderer::D2DxOverlay* renderer = nullptr;
 		inline static std::shared_ptr<DiInputManager> input = nullptr;
 		inline static loaded_resources res = {};

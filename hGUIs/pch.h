@@ -24,6 +24,9 @@
 #include <mutex>
 #include <thread>
 #include <variant>
+#include <any>
+#include <utility>
+#include <format>
 
 
 #include <d2d1.h>

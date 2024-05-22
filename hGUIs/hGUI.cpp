@@ -1,17 +1,17 @@
 #include "pch.h"
 #include "hGUI.h"
-#include <format>
 
-#include "animations.hpp"
 #include "animations.hpp"
 #include "style.hpp"
 #include "logging.h"
+#include "WindowsUtils.h"
 
 // controls
 namespace h_gui::controls
 {
-	label::label(std::wstring text) : control(), text(std::move(text))
+	label::label(std::wstring label_text) : control()
 	{
+		text = std::move(label_text);
 		size_ = {
 			h_style::structural::control_width
 			+ (h_style::structural::base::pad * 2),
@@ -30,8 +30,9 @@ namespace h_gui::controls
 	}
 
 	toggle::toggle(bool* data, std::wstring label, const std::function<void()>& on_enabled,
-	               const std::function<void()>& on_disabled) : control(), label(std::move(label)), state()
+	               const std::function<void()>& on_disabled) : control(), state()
 	{
+		text = std::move(label);
 		state = data;
 		size_ = {
 			h_style::structural::control_width
@@ -41,7 +42,8 @@ namespace h_gui::controls
 
 		//default to off position
 		marker_offset = {
-			   size_.x - h_style::structural::control::toggle_marker_width + size_.y / 2, size_.y / 2 };
+			size_.x - h_style::structural::control::toggle_marker_width + size_.y / 2, size_.y / 2
+		};
 
 		if (on_enabled != nullptr)
 		{
@@ -56,36 +58,36 @@ namespace h_gui::controls
 
 	blocks_count toggle::render(uint64_t tick, LPPOINT cursor_pos)
 	{
-		gui_manager::renderer->DrawStringC(label,
-		                                   h_style::theme::text::font_size_m,
-		                                   {
-			                                   origin_.x + h_style::structural::base::margin,
-			                                   origin_.y
-		                                   }, hovered_
-			                                      ? h_style::theme::colors::base::fg_hi
-			                                      : h_style::theme::colors::base::fg);
+
 		{
+			marker_fg = anim::lerp_colf(
+				marker_fg, *state
+					           ? h_style::theme::colors::control::toggle_marker_on
+					           : h_style::theme::colors::control::toggle_marker_off, toggle_anim_alpha);
+			marker_bg = anim::lerp_colf(
+				marker_bg, *state
+					           ? h_style::theme::colors::control::toggle_bg_on
+					           : h_style::theme::colors::control::toggle_bg_off, toggle_anim_alpha);
 
+			static D2D1_POINT_2F on_offset = {size_.x - size_.y / 2, size_.y / 2};
+			static D2D1_POINT_2F off_offset = {
+				size_.x - h_style::structural::control::toggle_marker_width + size_.y / 2, size_.y / 2
+			};
 
-			marker_fg = anim::lerp_colf(marker_fg, *state ? h_style::theme::colors::control::toggle_marker_on : h_style::theme::colors::control::toggle_marker_off, toggle_anim_alpha);
-			marker_bg = anim::lerp_colf(marker_bg, *state ? h_style::theme::colors::control::toggle_bg_on : h_style::theme::colors::control::toggle_bg_off, toggle_anim_alpha);
-
-			static D2D1_POINT_2F on_offset = { size_.x - size_.y / 2, size_.y / 2 };
-			static D2D1_POINT_2F off_offset = { size_.x - h_style::structural::control::toggle_marker_width + size_.y / 2, size_.y / 2 };
-
-			marker_offset = anim::lerp_2f(marker_offset, *state ?on_offset : off_offset , toggle_anim_alpha);
+			marker_offset = anim::lerp_2f(marker_offset, *state ? on_offset : off_offset, toggle_anim_alpha);
 
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect(
-					{origin_.x + size_.x - h_style::structural::control::toggle_marker_width,
-					origin_.y,
-					origin_.x + size_.x,
-					origin_.y + size_.y
+					{
+						origin_.x + size_.x - h_style::structural::control::toggle_marker_width,
+						origin_.y,
+						origin_.x + size_.x,
+						origin_.y + size_.y
 					},
-					size_.y/2, size_.y/2
+					size_.y / 2, size_.y / 2
 				), true,
 				marker_bg,
-				0, {  }
+				0, {}
 			);
 
 
@@ -97,23 +99,30 @@ namespace h_gui::controls
 				marker_fg, 0, {}
 			);
 
+			gui_manager::renderer->DrawStringC(text,
+				h_style::theme::text::font_size_m,
+				{
+					origin_.x + h_style::structural::base::margin,
+					origin_.y
+				}, hovered_
+				? h_style::theme::colors::base::fg_hi
+				: h_style::theme::colors::base::fg);
 		}
 
 
-
-
-		if (hovered_ && gui_manager::input->IsMouseButtonJustPressed(DiInputManager::vM_LEFTBTN))
+		if (hovered_ && enabled_ && gui_manager::input->IsMouseButtonJustPressed(DiInputManager::vM_LEFTBTN))
 		{
 			*state = !*state;
 			globals::invoker->invoke(*state ? this->on_enable : this->on_disable, std::any{});
 		}
-		
+
 
 		return 1;
 	}
 
-	button::button(std::wstring label, const std::function<void()>& action) : control(), label(std::move(label))
+	button::button(std::wstring label, const std::function<void()>& action) : control()
 	{
+		text = std::move(label);
 		size_ = {
 			h_style::structural::control_width
 			+ (h_style::structural::base::pad * 2),
@@ -149,11 +158,9 @@ namespace h_gui::controls
 		}
 
 		{
-			//TODO: Center text
-			gui_manager::renderer->DrawStringC(label, h_style::theme::text::font_size_m, {
-				                                   origin_.x + (h_style::structural::base::margin * 2),
-				                                   origin_.y + h_style::structural::base::pad +
-				                                   h_style::structural::base::margin,
+			gui_manager::renderer->DrawStringCenteredC(text, h_style::theme::text::font_size_m, {
+												   origin_.x + (size_.x / 2),
+												   origin_.y + (size_.y / 2),
 			                                   }, h_style::theme::colors::base::bg);
 		}
 
@@ -185,8 +192,9 @@ namespace h_gui::controls
 
 	slider_double::slider_double(double* data, double min, double max, std::wstring label,
 	                             const std::function<void(double)>& on_update) : control(),
-		data_(data), min_(min), max_(max), label(std::move(label))
+		data_(data), min_(min), max_(max)
 	{
+		text = std::move(label);
 		size_ = {
 			h_style::structural::control_width
 			+ (h_style::structural::base::pad * 2),
@@ -219,7 +227,7 @@ namespace h_gui::controls
 	{
 		{
 			static wchar_t buff[256];
-			if (swprintf(buff, 256, label.c_str(), *this->data_) < 0)
+			if (swprintf(buff, 256, text.c_str(), *this->data_) < 0)
 			{
 				ERR("BAD swprintf on format string (slider_double)");
 			}
@@ -295,9 +303,10 @@ namespace h_gui::controls
 
 	slider_long::slider_long(long* data, long min, long max, std::wstring label,
 	                         const std::function<void(long)>& on_update) : control(),
-	                                                                       data_(data), min_(min), max_(max),
-	                                                                       label(std::move(label))
+	                                                                       data_(data), min_(min), max_(max)
+	                                                                      
 	{
+		text = std::move(label);
 		size_ = {
 			h_style::structural::control_width
 			+ (h_style::structural::base::pad * 2),
@@ -332,7 +341,7 @@ namespace h_gui::controls
 	{
 		{
 			static wchar_t buff[256];
-			if (swprintf(buff, 256, label.c_str(), *this->data_) < 0)
+			if (swprintf(buff, 256, text.c_str(), *this->data_) < 0)
 			{
 				ERR("BAD swprintf on format string (slider_long)");
 			}
@@ -406,6 +415,7 @@ namespace h_gui::controls
 
 		return 2;
 	}
+
 }
 
 // tab
@@ -779,6 +789,159 @@ namespace h_gui
 	}
 }
 
+
+//modal selector
+namespace h_gui
+{
+
+	blocks_count controls::selection_button::render(uint64_t tick, LPPOINT cursor_pos)
+	{
+		static D2D1_COLOR_F button_color = h_style::theme::colors::control::button;
+
+		{
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(
+					{
+						origin_.x + h_style::structural::base::margin,
+						origin_.y + h_style::structural::base::pad + h_style::structural::base::margin,
+						origin_.x + size_.x - h_style::structural::base::pad,
+						origin_.y + size_.y - h_style::structural::base::pad - h_style::structural::base::margin
+					},
+					h_style::theme::border_radius / 2,
+					h_style::theme::border_radius / 2), true, button_color, 1,
+				h_style::theme::colors::control::button_stroke);
+		}
+
+		{
+			static wchar_t buff[256];
+			if (swprintf(buff, 256, fmt.c_str(), this->text.c_str()) < 0)
+			{
+				ERR("BAD swprintf on format string (modal_selection_button)");
+			}
+			const std::wstring ws(buff);
+
+			gui_manager::renderer->DrawStringCenteredC(ws, h_style::theme::text::font_size_m, {
+												   origin_.x + (size_.x/2),
+												   origin_.y + (size_.y/2),
+				}, h_style::theme::colors::base::bg);
+		}
+
+
+		if (hovered_ && enabled_)
+		{
+			if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
+			{
+				this->modal_target_window->set_modal(this->modal_ptr);
+			}
+			else if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
+			{
+				button_color = anim::lerp_colf(button_color, h_style::theme::colors::control::button_pressed, 0.75f);
+			}
+			else
+			{
+				button_color = anim::lerp_colf(button_color, h_style::theme::colors::control::button_hovered, 0.05f);
+			}
+		}
+		else
+		{
+			button_color = anim::lerp_colf(button_color, h_style::theme::colors::control::button, 0.05f);
+		}
+		return 2;
+	}
+
+	void controls::selection_button::set_option_text(std::wstring text)
+	{
+		this->text = std::move(text);
+	}
+
+	modal_selector::modal_selector(size_t* data, const std::wstring& text, std::vector<std::wstring> options, std::shared_ptr<window> window):
+	interactable({0, 0}, true), data(data), text(text), options(options)
+	{
+		this->modal_target_window = window;
+		size_ = {
+		h_style::structural::control_width,
+		h_style::structural::base::block_height * (options.size() + 2)
+		};
+	}
+
+	void modal_selector::bind_to_button(std::shared_ptr<controls::selection_button> ptr)
+	{
+		this->button_ptr = ptr;
+	}
+
+	blocks_count modal_selector::render(uint64_t tick, LPPOINT cursor_pos)
+	{
+
+		gui_manager::renderer->DrawCustomRoundedRect(
+			D2D1::RoundedRect({ origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y },
+				h_style::theme::border_radius, h_style::theme::border_radius),
+			true, h_style::theme::colors::base::bg,1, h_style::theme::colors::window::border);
+
+
+
+		blocks_count blocks = 1;
+		auto get_option_rect = [this, &blocks]()
+			{
+				D2D1_RECT_F loc = {
+				origin_.x,
+				origin_.y + blocks * h_style::structural::base::block_height,
+				origin_.x + size_.x,
+				origin_.y + ((blocks + 1) * h_style::structural::base::block_height)
+				};
+				return loc;
+			};
+
+		D2D1_RECT_F loc = get_option_rect();
+		for (auto& op : options)
+		{
+			loc = get_option_rect();
+
+			gui_manager::renderer->DrawLineC({ loc.left, loc.top + h_style::structural::base::pad }, { loc.right, loc.top + h_style::structural::base::pad }, 1, h_style::theme::colors::window::separator);
+
+			if (enabled_ && hovered_ && windows_utils::is_point_in_rect(loc, cursor_pos) ){
+
+
+				//{ loc.left, loc.top + h_style::structural::base::pad }, { loc.right, loc.top + h_style::structural::base::pad }
+				gui_manager::renderer->DrawCustomRect({ loc.left, loc.top + h_style::structural::base::pad, loc.right, loc.bottom + h_style::structural::base::pad }, true, 0, { 1,1,1,0.05f }, {});
+
+				gui_manager::renderer->DrawStringCenteredC(op.c_str(),
+					h_style::theme::text::font_size_m,
+					{ loc.left + ((loc.right - loc.left) / 2), loc.top + ((loc.bottom - loc.top) / 2) },
+					h_style::theme::colors::base::fg_hi
+				);
+			}else
+			{
+				gui_manager::renderer->DrawStringCenteredC(op.c_str(),
+					h_style::theme::text::font_size_m,
+					{ loc.left + ((loc.right - loc.left) / 2), loc.top + ((loc.bottom - loc.top) / 2) },
+					h_style::theme::colors::base::fg
+				);
+			}
+
+
+			blocks++;
+		}
+		loc = get_option_rect();
+		gui_manager::renderer->DrawLineC({ loc.left, loc.top + h_style::structural::base::pad }, { loc.right, loc.top + h_style::structural::base::pad }, 1, h_style::theme::colors::window::separator);
+
+
+
+		if (hovered_ && enabled_)
+		{
+			if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
+			{
+				// Remove modal
+				//TODO:: Fade out
+				this->modal_target_window->end_modal();
+
+				//update button
+				this->button_ptr->set_option_text(options.at(*data));
+			}
+		}
+		return 5;
+	}
+}
+
 // category
 namespace h_gui
 {
@@ -855,9 +1018,10 @@ namespace h_gui
 {
 	blocks_count h_gui::window::render(uint64_t tick, LPPOINT cursor_pos)
 	{
+		this->enabled_ = true;
+
 		static D2D1_COLOR_F accent_color = h_style::theme::colors::base::accent_a;
 
-		if (!enabled_) { return 0; }
 		{
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect({origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y},
@@ -874,6 +1038,15 @@ namespace h_gui
 		                                           }, h_style::theme::colors::base::fg);
 
 
+
+
+
+		if (current_modal_selector != nullptr)
+		{
+			this->hovered_ = false;
+			this->enabled_ = false;
+		}
+
 		// render active tab group
 		if (this->currently_selected_section != nullptr)
 		{
@@ -885,17 +1058,22 @@ namespace h_gui
 				});
 			tab_grp->render(tick, cursor_pos);
 
-			if (hovered_)
+			if(being_dragged || !enabled_)
 			{
-				tab_grp->calc_hovered(cursor_pos);
+				tab_grp->disable();
 			}
-			else
-			{
-				tab_grp->set_hovered(false);
+			else {
+				tab_grp->enable();
+				if (hovered_)
+				{
+					tab_grp->calc_hovered(cursor_pos);
+				}
+				else
+				{
+					tab_grp->set_hovered(false);
+				}
 			}
 		}
-
-
 
 
 		// side bar separator
@@ -937,7 +1115,8 @@ namespace h_gui
 
 		uint16_t blocks_ct = 0; // for the window top bar
 
-		//TODO: render top widget
+
+
 
 		for (const auto& cat : categories_)
 		{
@@ -947,7 +1126,7 @@ namespace h_gui
 				h_style::structural::base::pad;
 			cat->set_origin({origin_.x + h_style::structural::base::pad, origin_.y + vert_offset});
 
-			if (being_dragged)
+			if (being_dragged || !this->enabled_)
 			{
 				cat->disable();
 			}
@@ -974,22 +1153,41 @@ namespace h_gui
 						h_style::structural::base::pad)) +
 					h_style::structural::base::pad;
 				gui_manager::renderer->DrawLineC(
-					{origin_.x,
-						origin_.y + vert_offset + h_style::structural::base::margin},
-					{origin_.x + h_style::structural::window::side_bar_width,
-						origin_.y + vert_offset + h_style::structural::base::margin },
+					{
+						origin_.x,
+						origin_.y + vert_offset + h_style::structural::base::margin
+					},
+					{
+						origin_.x + h_style::structural::window::side_bar_width,
+						origin_.y + vert_offset + h_style::structural::base::margin
+					},
 					2,
 					h_style::theme::colors::window::separator);
 			}
 		}
 
-		//TODO: Render BOTTOM WIDGET
+		if (current_modal_selector != nullptr)
+		{
+			{
+				gui_manager::renderer->DrawCustomRoundedRect(
+					D2D1::RoundedRect({ origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y },
+						h_style::theme::border_radius,
+						h_style::theme::border_radius),
+					true, h_style::theme::colors::window::blocked_by_modal, 1, h_style::theme::colors::window::border);
+			}
+			current_modal_selector->set_origin(this->origin_);
+
+			current_modal_selector->calc_hovered(cursor_pos);
+			current_modal_selector->render(tick, cursor_pos);
+		}
+
+
 
 		// Handle Dragging
 		{
-			if (hovered_ || being_dragged)
+			if ((hovered_ || being_dragged) && this->enabled_)
 			{
-				accent_color = anim::lerp_colf(accent_color, h_style::theme::colors::base::accent_b, 0.025f);
+				//accent_color = anim::lerp_colf(accent_color, h_style::theme::colors::base::accent_b, 0.025f);
 				if (cursor_pos->y < origin_.y + h_style::structural::base::block_height || being_dragged)
 				{
 					if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
@@ -1017,7 +1215,7 @@ namespace h_gui
 			}
 			else
 			{
-				accent_color = anim::lerp_colf(accent_color, h_style::theme::colors::base::accent_a, 0.025f);
+				//accent_color = anim::lerp_colf(accent_color, h_style::theme::colors::base::accent_a, 0.025f);
 			}
 		}
 
@@ -1041,6 +1239,19 @@ namespace h_gui
 	{
 		return this->currently_selected_section;
 	}
+
+	void window::set_modal(std::shared_ptr<modal_selector> ptr)
+	{
+		this->current_modal_selector = ptr;
+	}
+
+	void window::end_modal()
+	{
+		this->current_modal_selector = nullptr;
+	}
+
+
+
 }
 
 // control_group
@@ -1085,6 +1296,18 @@ namespace h_gui
 		return c;
 	}
 
+	std::shared_ptr<control> control_group::modal_selection(size_t* data, std::wstring button_label_fmt,
+		std::wstring modal_label, std::vector<std::wstring> options, std::shared_ptr<window> modal_target)
+	{
+		std::shared_ptr<modal_selector> s = std::make_shared<modal_selector>(data, modal_label, options, modal_target);
+		auto btn = std::make_shared<controls::selection_button>(options.at(0), button_label_fmt, s, modal_target);
+		std::shared_ptr<control> c = btn;
+		s->bind_to_button(btn);
+		this->controls_.emplace_back(c);
+		this->modals.emplace_back(s);
+		return c;
+	}
+
 
 	blocks_count control_group::render(uint64_t tick, LPPOINT cursor_pos)
 	{
@@ -1124,7 +1347,7 @@ namespace h_gui
 			);
 		}
 
-		blocks_ = 1; // start at 1 for top label
+		blocks_ = 1; // start at 1 for top text
 
 		for (auto& ctrl : controls_)
 		{
@@ -1141,18 +1364,15 @@ namespace h_gui
 			else
 			{
 				ctrl->enable();
+				if (!hovered_)
+				{
+					ctrl->set_hovered(false);
+				}
+				else
+				{
+					ctrl->calc_hovered(cursor_pos);
+				}
 			}
-
-
-			if (!hovered_)
-			{
-				ctrl->set_hovered(false);
-			}
-			else
-			{
-				ctrl->calc_hovered(cursor_pos);
-			}
-
 			blocks_ += ctrl->render(tick, cursor_pos);
 		}
 
@@ -1226,6 +1446,8 @@ namespace h_gui
 	{
 		return 0;
 	}
+
+
 }
 
 // workspace
@@ -1256,7 +1478,7 @@ namespace h_gui
 {
 	bool gui_manager::render(UINT32 region_width, UINT32 region_height, uint64_t tick, LPPOINT cursor_pos)
 	{
-		renderer->SetSolidColor({1, 1, 1, 1});
+		renderer->SetSolidColor({0,0,0,0});
 		for (const auto& ws : workspaces_)
 		{
 			ws->render(region_width, region_height, tick, cursor_pos);
@@ -1303,8 +1525,6 @@ namespace h_gui
 	{
 		h_gui::gui_manager::renderer = renderer;
 		h_gui::gui_manager::input = input_manager;
-		gui_manager::renderer->SetSolidColor(h_style::theme::colors::base::fg);
-
 		init_shared_res();
 	}
 

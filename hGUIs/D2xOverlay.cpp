@@ -611,23 +611,26 @@ namespace Renderer {
 	}
 
 
+	
 	void D2DxOverlay::ToggleAcrylicEffect(bool enable) {
+
 		static HMODULE hUser = LoadLibrary(L"user32.dll");
 		ACCENT_POLICY accentPolicy;
-
+	
 		if (enable) {
+			// ACCENT_ENABLE_BLURBEHIND
 			accentPolicy = ACCENT_POLICY{ ACCENT_ENABLE_BLURBEHIND, 2, 0x01000000, 0 };
 		}
 		else {
 			accentPolicy = { ACCENT_DISABLED, 2, 0x00000000, 0 };
 		}
-
+	
 		WINDOWCOMPOSITIONATTRIBDATA data;
 		data.Attrib = WCA_ACCENT_POLICY;
 		data.pvData = &accentPolicy;
 		data.cbData = sizeof(accentPolicy);
-
-
+	
+	
 		if (hUser) {
 			auto SetWindowCompositionAttribute = reinterpret_cast<pSetWindowCompositionAttribute>(GetProcAddress(hUser, "SetWindowCompositionAttribute"));
 			if (SetWindowCompositionAttribute) {
@@ -882,7 +885,7 @@ namespace Renderer {
 
 
 			m_D2D1RenderTarget->EndDraw();
-			Sleep(1); //TODO: Use chrono
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
 		else
 		{
@@ -970,6 +973,7 @@ namespace Renderer {
 
 		// Enter the rendering loop
 		while (d2.RenderLoop() && !D2DxOverlay::exit) {}
+
 
 		LOG("Dx Renderer Exited");
 

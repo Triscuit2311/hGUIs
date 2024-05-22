@@ -107,6 +107,7 @@ namespace h_style
 			{
 				constexpr D2D1_COLOR_F separator{palette::med_gray2};
 				constexpr D2D1_COLOR_F border{palette::med_gray};
+				constexpr D2D1_COLOR_F blocked_by_modal{ rgb_to_color_f(179,180,181,0.2f) };
 
 			}
 

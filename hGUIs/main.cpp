@@ -24,7 +24,7 @@ bool use_desktop_blur = true; //broken in windows 11
 bool block_inputs_in_menu = true;
 bool exit_thread = false;
 
-D2D1_COLOR_F myColor = {1,0,0,1};
+D2D1_COLOR_F myColor = {0.7f,0.2f,0.8f,0.65f};
 
 size_t selection = 0;
 // Runs once at start-time, initializes all the windows, groups and controls for the GUI

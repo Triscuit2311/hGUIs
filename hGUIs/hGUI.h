@@ -55,6 +55,7 @@ namespace h_gui
 		void set_hovered(bool hovered);
 		void set_origin(D2D1_POINT_2F origin);
 		D2D1_POINT_2F get_size() const;
+		void set_size(D2D1_POINT_2F sz);
 		void enable();
 		void disable();
 		bool is_hovered();
@@ -63,6 +64,10 @@ namespace h_gui
 	inline D2D1_POINT_2F interactable::get_size() const
 	{
 		return size_;
+	}
+	inline void interactable::set_size(const D2D1_POINT_2F sz)
+	{
+		size_ = sz;
 	}
 
 	class renderable
@@ -318,10 +323,18 @@ namespace h_gui
 		D2D1_COLOR_F current{};
 		D2D1_COLOR_F cursor_preview = { 1,1,1,1 };
 		std::shared_ptr<controls::color_picker_control> control_ptr;
+		std::vector<std::shared_ptr<controls::slider_double>> sliders_{};
+		std::shared_ptr<controls::button> confirm_btn_;
+		double slider_bindings[4] = { 0,0,0, 0 };
+		void confirm_action() const;
+		D2D1_POINT_2F cursor_preview_loc = { -1,-1 };
+		bool has_any_slider_changed = false;
+
 	public:
 		modal_color_picker(D2D1_COLOR_F def_color, const std::wstring& text, std::shared_ptr<window> window);
 		void bind_to_control(std::shared_ptr<controls::color_picker_control> ptr);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
+		
 		
 	};
 
@@ -448,9 +461,10 @@ namespace h_gui
 		Renderer::D2DBitmapID RECT_BOTTOM_BORDER;
 
 
-		const D2D1_POINT_2F rect_color_picekr_sz = { 250, 250 };
+		const D2D1_POINT_2F rect_color_picker_sz = { 250, 250 };
 		Renderer::D2DBitmapID COLOR_PICKER_SQUARE;
-
+		Renderer::D2DBitmapID COLOR_PICKER_PREVIEW_BG;
+		Renderer::D2DBitmapID COLOR_PICKER_CONTROL_PREVIEW_BG;
 	};
 
 	class gui_manager

@@ -37,7 +37,7 @@ namespace windows_utils
         rgb.rgbtGreen = GetGValue(c);
         rgb.rgbtBlue = GetBValue(c);
 
-        out = h_style::theme::colors::rgb_to_color_f(rgb.rgbtRed, rgb.rgbtGreen, rgb.rgbtBlue, 1.0f);
+        out = h_style::theme::colors::rgb_to_color_f(rgb.rgbtRed, rgb.rgbtGreen, rgb.rgbtBlue, out.a);
     }
 
 }

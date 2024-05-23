@@ -650,7 +650,7 @@ namespace h_gui
 						                                           ? h_style::theme::colors::tab::text_unselected_hov
 						                                           : h_style::theme::colors::tab::text_unselected);
 
-					if (select_hovered && gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
+					if (enabled_ && select_hovered && gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
 					{
 						select_next = tab;
 					}
@@ -1028,6 +1028,7 @@ namespace h_gui {
 						origin_.y + size_.y - h_style::structural::base::pad - h_style::structural::base::margin
 			};
 
+			gui_manager::renderer->DrawBitmap(gui_manager::res.COLOR_PICKER_CONTROL_PREVIEW_BG, preview_pos);
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect(preview_pos,
 					h_style::theme::border_radius / 2,
@@ -1063,17 +1064,35 @@ namespace h_gui {
 	{
 		*this->data = color;
 	}
+
+
 }
 
 // Color picker modal
 namespace h_gui {
 
+
 	modal_color_picker::modal_color_picker(const D2D1_COLOR_F def_color, const std::wstring& text, std::shared_ptr<window> window): modal_obj(window), current(def_color),text(text)
 	{
 		size_ = {
-		h_style::structural::control_width + gui_manager::res.rect_color_picekr_sz.x,
-		(h_style::structural::base::block_height * 5) + gui_manager::res.rect_color_picekr_sz.y
+		h_style::structural::control_width + (h_style::structural::space*5) + gui_manager::res.rect_color_picker_sz.x,
+		(h_style::structural::base::block_height * 5) + gui_manager::res.rect_color_picker_sz.y
 		};
+
+		slider_bindings[0] = def_color.r;
+		slider_bindings[1] = def_color.g;
+		slider_bindings[2] = def_color.b;
+		slider_bindings[3] = def_color.a;
+
+		this->sliders_.emplace_back(std::make_shared<controls::slider_double>(&slider_bindings[0],
+			0, 1, L"Red: %.2f", [this](double v) {this->has_any_slider_changed = true;}));
+		this->sliders_.emplace_back(std::make_shared<controls::slider_double>(&slider_bindings[1],
+			0, 1, L"Green: %.2f", [this](double v) {this->has_any_slider_changed = true; }));
+		this->sliders_.emplace_back(std::make_shared<controls::slider_double>(&slider_bindings[2],
+			0, 1, L"Blue: %.2f", [this](double v) {this->has_any_slider_changed = true; }));
+		this->sliders_.emplace_back(std::make_shared<controls::slider_double>(&slider_bindings[3],
+			0, 1, L"Alpha: %.2f", [this](double v) {this->has_any_slider_changed = true; }));
+		this->confirm_btn_ = std::make_shared<controls::button>(L"Confirm", [this]() {this->confirm_action(); });
 	}
 
 	void modal_color_picker::bind_to_control(std::shared_ptr<controls::color_picker_control> ptr)
@@ -1081,8 +1100,23 @@ namespace h_gui {
 		this->control_ptr = ptr;
 	}
 
+	void modal_color_picker::confirm_action() const
+	{
+		this->control_ptr->set_color(current);
+		this->modal_target_window->end_modal();
+		gui_manager::input->DeBounce();
+	}
+
 	blocks_count modal_color_picker::render(uint64_t tick, LPPOINT cursor_pos)
 	{
+
+		if(has_any_slider_changed){
+			current.r = slider_bindings[0];
+			current.g = slider_bindings[1];
+			current.b = slider_bindings[2];
+			current.a = slider_bindings[3];
+			cursor_preview = current;
+		}
 
 		// Background
 		{
@@ -1094,15 +1128,13 @@ namespace h_gui {
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect(modal_window, h_style::theme::border_radius, h_style::theme::border_radius),
 				true, h_style::theme::colors::base::bg, 1, h_style::theme::colors::window::border);
-
-
 		}
 
 
 		{
 			D2D1_RECT_F picker_loc = {
-				origin_.x + size_.x - gui_manager::res.rect_color_picekr_sz.x - h_style::structural::space,
-				origin_.y + size_.y - gui_manager::res.rect_color_picekr_sz.y - h_style::structural::space,
+				origin_.x + size_.x - gui_manager::res.rect_color_picker_sz.x - h_style::structural::space,
+				origin_.y + size_.y - gui_manager::res.rect_color_picker_sz.y - h_style::structural::space,
 				origin_.x + size_.x - h_style::structural::space,
 				origin_.y + size_.y - h_style::structural::space
 			};
@@ -1117,29 +1149,103 @@ namespace h_gui {
 			Draw_Rounded_rect_drop_shadow(preview_loc, 1.0f);
 			Draw_Rounded_rect_drop_shadow(picker_loc, 1.0f);
 
+
+			// Color palette + setter
 			gui_manager::renderer->DrawBitmap(gui_manager::res.COLOR_PICKER_SQUARE, picker_loc);
 
+			const bool is_cursor_in_picker = windows_utils::is_point_in_rect(picker_loc, cursor_pos);
 
-			if (windows_utils::is_point_in_rect(picker_loc, cursor_pos))
+			if(!is_cursor_in_picker || (abs(cursor_pos->x - cursor_preview_loc.x) > 50) || (abs(cursor_pos->y - cursor_preview_loc.y) > 50))
+			{
+				cursor_preview_loc.x = cursor_pos->x;
+				cursor_preview_loc.y = cursor_pos->y;
+			}else
 			{
 				windows_utils::get_color_from_curpos(cursor_pos, cursor_preview);
 				if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN)) {
-					current = cursor_preview;
+					current.r = cursor_preview.r;
+					current.g = cursor_preview.g;
+					current.b = cursor_preview.b;
+					slider_bindings[0] = current.r;
+					slider_bindings[1] = current.g;
+					slider_bindings[2] = current.b;
+					slider_bindings[3] = current.a;
 				}
+
+				cursor_preview_loc = anim::lerp_2f(cursor_preview_loc, { cursor_pos->x + 3.0f, cursor_pos->y - 15.0f }, 0.6f);
 				gui_manager::renderer->DrawCustomRect(
-					{ cursor_pos->x + 3.0f,
-						cursor_pos->y - 15.0f,
-						cursor_pos->x + 18.0f,
-						(float)cursor_pos->y },
+					{cursor_preview_loc.x,
+						cursor_preview_loc.y,
+						cursor_preview_loc.x + 15.0f,
+						cursor_preview_loc.y + 15.0f
+					},
 					true, 1, cursor_preview, { 0,0,0,1 });
 			}
+			
 
-
+			// Preview color
+			gui_manager::renderer->DrawBitmap(gui_manager::res.COLOR_PICKER_PREVIEW_BG, preview_loc);
 
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect(preview_loc, h_style::theme::border_radius, h_style::theme::border_radius),
 				true, current, 0, { 0,0,0,1 });
+			
 
+
+			// Selected color info
+			{
+				blocks_count blocks_ = 1; // start at 1 for top text
+				float vert_offset;
+				for (auto& s : sliders_)
+				{
+					vert_offset = (h_style::structural::window::top_bar_height + h_style::structural::base::margin)
+						+ (blocks_ * (h_style::structural::base::block_height + h_style::structural::base::margin));
+					s->set_origin({ origin_.x + h_style::structural::space,
+						origin_.y + vert_offset });
+
+					if (!enabled_)
+					{
+						s->disable();
+					}
+					else
+					{
+						s->enable();
+						if (!hovered_)
+						{
+							s->set_hovered(false);
+						}
+						else
+						{
+							s->calc_hovered(cursor_pos);
+						}
+					}
+					blocks_ += s->render(tick, cursor_pos);
+				}
+
+				vert_offset = (h_style::structural::window::top_bar_height + h_style::structural::base::margin)
+					+ (blocks_ * (h_style::structural::base::block_height + h_style::structural::base::margin));
+
+				confirm_btn_->set_origin({ origin_.x + h_style::structural::space,
+					origin_.y + vert_offset });
+				if (!enabled_)
+				{
+					confirm_btn_->disable();
+				}
+				else
+				{
+					confirm_btn_->enable();
+					if (!hovered_)
+					{
+						confirm_btn_->set_hovered(false);
+					}
+					else
+					{
+						confirm_btn_->calc_hovered(cursor_pos);
+					}
+				}
+				blocks_ += confirm_btn_->render(tick, cursor_pos);
+			}
+				
 
 
 			// Center separator
@@ -1168,15 +1274,14 @@ namespace h_gui {
 				{ origin_.x, origin_.y + h_style::structural::window::top_bar_height },
 				{ origin_.x + size_.x, origin_.y + h_style::structural::window::top_bar_height },
 				2, h_style::theme::colors::window::separator);
+
+			gui_manager::renderer->DrawStringCenteredC(text,
+				h_style::theme::text::font_size_s,
+				{ origin_.x + (size_.x / 2), origin_.y + (h_style::structural::window::top_bar_height / 2) }, h_style::theme::colors::base::fg_hi);
+
 		}
 
 
-
-		// if (gui_manager::input->IsMouseButtonJustPressed(DiInputManager::vM_LEFTBTN)) {
-		// 	this->control_ptr->set_color({ 0,1,0,1 });
-		// 	this->modal_target_window->end_modal();
-		// 	gui_manager::input->DeBounce();
-		// }
 
 
 		return 0;
@@ -1774,6 +1879,8 @@ namespace h_gui
 		res.RECT_BOTTOM_BORDER = gui_manager::renderer->CreateBitmapImageFromFile(path / "SHADOW_RECT" / "BOTTOM_BORDER.png");
 
 		res.COLOR_PICKER_SQUARE = gui_manager::renderer->CreateBitmapImageFromFile(path / "color_picker_square.png");
+		res.COLOR_PICKER_PREVIEW_BG = gui_manager::renderer->CreateBitmapImageFromFile(path / "transparent_preview_bg.png");
+		res.COLOR_PICKER_CONTROL_PREVIEW_BG = gui_manager::renderer->CreateBitmapImageFromFile(path / "color_control_preview_backing.png");
 
 	}
 

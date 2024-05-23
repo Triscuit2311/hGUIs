@@ -6,6 +6,62 @@
 #include "logging.h"
 #include "WindowsUtils.h"
 
+
+//helpers
+namespace h_gui
+{
+	void Draw_Rounded_rect_drop_shadow(const D2D1_RECT_F pos, const float opacity = 1.0f)
+	{
+		const float sprite_offset = gui_manager::res.rect_sprite_sz.x / 2;
+
+		gui_manager::renderer->DrawBitmap(gui_manager::res.RECT_TL_CORNER,
+			{
+				pos.left - sprite_offset,
+				pos.top - sprite_offset,
+				pos.left + sprite_offset,
+				pos.top + sprite_offset,
+
+			}, opacity);
+
+
+		gui_manager::renderer->DrawBitmap(gui_manager::res.RECT_BL_CORNER,
+			{
+				pos.left - sprite_offset,
+				pos.bottom - sprite_offset,
+				pos.left + sprite_offset,
+				pos.bottom + sprite_offset,
+			}, opacity);
+
+
+		gui_manager::renderer->DrawBitmap(gui_manager::res.RECT_BR_CORNER,
+			{
+				pos.right - sprite_offset,
+				pos.bottom - sprite_offset,
+				pos.right + sprite_offset,
+				pos.bottom + sprite_offset,
+			}, opacity);
+
+
+
+		gui_manager::renderer->DrawBitmap(gui_manager::res.RECT_LEFT_BORDER,
+			{
+				pos.left - sprite_offset,
+				pos.top + sprite_offset,
+				pos.left + sprite_offset,
+				pos.bottom - sprite_offset,
+			}, opacity);
+
+		gui_manager::renderer->DrawBitmap(gui_manager::res.RECT_BOTTOM_BORDER,
+			{
+				pos.left + sprite_offset,
+				pos.bottom - sprite_offset,
+				pos.right - sprite_offset,
+				pos.bottom + sprite_offset,
+			}, opacity);
+	}
+
+}
+
 // controls
 namespace h_gui::controls
 {
@@ -99,14 +155,14 @@ namespace h_gui::controls
 				marker_fg, 0, {}
 			);
 
-			gui_manager::renderer->DrawStringC(text,
+			gui_manager::renderer->DrawStringCenteredSelectiveC(text,
 				h_style::theme::text::font_size_m,
 				{
 					origin_.x + h_style::structural::base::margin,
-					origin_.y
+					origin_.y + (size_.y / 2)
 				}, hovered_
 				? h_style::theme::colors::base::fg_hi
-				: h_style::theme::colors::base::fg);
+				: h_style::theme::colors::base::fg, false, true);
 		}
 
 
@@ -552,14 +608,14 @@ namespace h_gui
 
 		// Shadow
 		{
-			// gui_manager::renderer->DrawBitmap(gui_manager::res.BT_GRADIENT,
-			//                                   {
-			// 	                                  origin_.x,
-			// 	                                  origin_.y + h_style::structural::window::tab_select_height -
-			// 	                                  gui_manager::res.gradient_sz.y,
-			// 	                                  origin_.x + size_.x,
-			// 	                                  origin_.y + h_style::structural::window::tab_select_height,
-			//                                   }, 0.6f);
+			gui_manager::renderer->DrawBitmap(gui_manager::res.BT_GRADIENT,
+			                                  {
+				                                  origin_.x,
+				                                  origin_.y + h_style::structural::window::tab_select_height -
+				                                  gui_manager::res.gradient_sz.y,
+				                                  origin_.x + size_.x,
+				                                  origin_.y + h_style::structural::window::tab_select_height,
+			                                  }, 0.6f);
 		}
 
 
@@ -610,26 +666,25 @@ namespace h_gui
 							tab_rect.right - h_style::structural::tab::tab_grab_height + 1,
 							tab_rect.bottom + h_style::structural::base::pad
 
-						}
-						, true, 0, h_style::theme::colors::tab::select_face, {});
+						}, true, 0, h_style::theme::colors::tab::select_face, {});
 
-					// gui_manager::renderer->DrawBitmap(
-					// 	gui_manager::res.tab_edge_left,
-					// 	{
-					// 		tab_rect.left,
-					// 		tab_rect.bottom - h_style::structural::tab::tab_grab_height,
-					// 		tab_rect.left + h_style::structural::tab::tab_grab_height,
-					// 		tab_rect.bottom + h_style::structural::base::pad
-					// 	});
-					//
-					// gui_manager::renderer->DrawBitmap(
-					// 	gui_manager::res.tab_edge_right,
-					// 	{
-					// 		tab_rect.right - h_style::structural::tab::tab_grab_height,
-					// 		tab_rect.bottom - h_style::structural::tab::tab_grab_height,
-					// 		tab_rect.right,
-					// 		tab_rect.bottom + h_style::structural::base::pad
-					// 	});
+					gui_manager::renderer->DrawBitmap(
+						gui_manager::res.tab_edge_left,
+						{
+							tab_rect.left,
+							tab_rect.bottom - h_style::structural::tab::tab_grab_height,
+							tab_rect.left + h_style::structural::tab::tab_grab_height,
+							tab_rect.bottom + h_style::structural::base::pad
+						});
+					
+					gui_manager::renderer->DrawBitmap(
+						gui_manager::res.tab_edge_right,
+						{
+							tab_rect.right - h_style::structural::tab::tab_grab_height,
+							tab_rect.bottom - h_style::structural::tab::tab_grab_height,
+							tab_rect.right,
+							tab_rect.bottom + h_style::structural::base::pad
+						});
 
 					gui_manager::renderer->DrawStringCenteredC(tab->text, h_style::theme::text::font_size_m, text_origin
 					                                           , h_style::theme::colors::tab::text_selected);
@@ -792,28 +847,30 @@ namespace h_gui
 	}
 }
 
-
-//modal selector
+//modal selector button
 namespace h_gui
 {
-
 	blocks_count controls::selection_button::render(uint64_t tick, LPPOINT cursor_pos)
 	{
 		static D2D1_COLOR_F button_color = h_style::theme::colors::control::button;
 
 		{
-			gui_manager::renderer->DrawCustomRoundedRect(
-				D2D1::RoundedRect(
-					{
+			D2D1_RECT_F pos = {
 						origin_.x + h_style::structural::base::margin,
 						origin_.y + h_style::structural::base::pad + h_style::structural::base::margin,
 						origin_.x + size_.x - h_style::structural::base::pad,
 						origin_.y + size_.y - h_style::structural::base::pad - h_style::structural::base::margin
-					},
+			};
+
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(pos,
 					h_style::theme::border_radius / 2,
 					h_style::theme::border_radius / 2), true, button_color, 1,
 				h_style::theme::colors::control::button_stroke);
+
 		}
+
+
 
 		{
 			static wchar_t buff[256];
@@ -824,8 +881,8 @@ namespace h_gui
 			const std::wstring ws(buff);
 
 			gui_manager::renderer->DrawStringCenteredC(ws, h_style::theme::text::font_size_m, {
-												   origin_.x + (size_.x/2),
-												   origin_.y + (size_.y/2),
+												   origin_.x + (size_.x / 2),
+												   origin_.y + (size_.y / 2),
 				}, h_style::theme::colors::base::bg);
 		}
 
@@ -857,11 +914,12 @@ namespace h_gui
 	{
 		this->text = std::move(text);
 	}
+}
 
-	modal_selector::modal_selector(size_t* data, const std::wstring& text, std::vector<std::wstring> options, std::shared_ptr<window> window):
-	interactable({0, 0}, true), data(data), text(text), options(options)
+//modal selector
+namespace h_gui {
+	modal_selector::modal_selector(size_t* data, const std::wstring& text, std::vector<std::wstring> options, std::shared_ptr<window> window) : modal_obj(window), data(data), text(text), options(options)
 	{
-		this->modal_target_window = window;
 		size_ = {
 		h_style::structural::control_width,
 		h_style::structural::base::block_height * (options.size() + 2)
@@ -876,11 +934,20 @@ namespace h_gui
 	blocks_count modal_selector::render(uint64_t tick, LPPOINT cursor_pos)
 	{
 
-		gui_manager::renderer->DrawCustomRoundedRect(
-			D2D1::RoundedRect({ origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y },
-				h_style::theme::border_radius, h_style::theme::border_radius),
-			true, h_style::theme::colors::base::bg,1, h_style::theme::colors::window::border);
 
+		{
+			D2D1_RECT_F pos = {
+				 origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y
+			};
+
+			Draw_Rounded_rect_drop_shadow(pos);
+
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(pos, h_style::theme::border_radius, h_style::theme::border_radius),
+				true, h_style::theme::colors::base::bg, 1, h_style::theme::colors::window::border);
+
+
+		}
 
 
 		blocks_count blocks = 0;
@@ -909,7 +976,7 @@ namespace h_gui
 
 			gui_manager::renderer->DrawLineC({ loc.left, loc.top + h_style::structural::base::pad }, { loc.right, loc.top + h_style::structural::base::pad }, 1, h_style::theme::colors::window::separator);
 
-			if (enabled_ && hovered_ && windows_utils::is_point_in_rect(loc, cursor_pos) ){
+			if (enabled_ && hovered_ && windows_utils::is_point_in_rect(loc, cursor_pos)) {
 
 				//{ loc.left, loc.top + h_style::structural::base::pad }, { loc.right, loc.top + h_style::structural::base::pad }
 				gui_manager::renderer->DrawCustomRect({ loc.left, loc.top + h_style::structural::base::pad, loc.right, loc.bottom + h_style::structural::base::pad }, true, 0, { 1,1,1,0.05f }, {});
@@ -926,7 +993,8 @@ namespace h_gui
 					gui_manager::input->DeBounce();
 				}
 
-			}else
+			}
+			else
 			{
 				gui_manager::renderer->DrawStringCenteredC(options[i].c_str(),
 					h_style::theme::text::font_size_m,
@@ -935,31 +1003,183 @@ namespace h_gui
 				);
 			}
 
-
-
-
 			blocks++;
 		}
 		loc = get_option_rect();
 		gui_manager::renderer->DrawLineC({ loc.left, loc.top + h_style::structural::base::pad }, { loc.right, loc.top + h_style::structural::base::pad }, 1, h_style::theme::colors::window::separator);
 
-
-
-		// if (hovered_ && enabled_)
-		// {
-		// 	if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
-		// 	{
-		// 		// Remove modal
-		// 		//TODO:: Fade out
-		// 		this->modal_target_window->end_modal();
-		//
-		// 		//update button
-		// 		this->button_ptr->set_option_text(options.at(*data));
-		// 	}
-		// }
-
 		return blocks;
 
+	}
+}
+
+
+// color picker control
+namespace h_gui {
+
+	blocks_count controls::color_picker_control::render(uint64_t tick, LPPOINT cursor_pos)
+	{
+
+		{
+			D2D1_RECT_F preview_pos = {
+						origin_.x + size_.x - size_.y - h_style::structural::base::pad,
+						origin_.y + h_style::structural::base::pad + h_style::structural::base::margin,
+						origin_.x + size_.x - h_style::structural::base::pad,
+						origin_.y + size_.y - h_style::structural::base::pad - h_style::structural::base::margin
+			};
+
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(preview_pos,
+					h_style::theme::border_radius / 2,
+					h_style::theme::border_radius / 2), true, *this->data, 1,
+				h_style::theme::colors::window::border);
+
+
+			gui_manager::renderer->DrawStringCenteredSelectiveC(text,
+				h_style::theme::text::font_size_m,
+				{
+					origin_.x + h_style::structural::base::margin,
+					origin_.y + (size_.y / 2)
+				}, hovered_
+				? h_style::theme::colors::base::fg_hi
+				: h_style::theme::colors::base::fg, false, true);
+
+			if (hovered_ && enabled_)
+			{
+				if (windows_utils::is_point_in_rect(preview_pos, cursor_pos)) {
+					if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
+					{
+						this->modal_target_window->set_modal(this->modal_ptr);
+						gui_manager::input->DeBounce();
+					}
+				}
+			}
+		}
+
+		return 2;
+	}
+
+	void controls::color_picker_control::set_color(const D2D1_COLOR_F color) const
+	{
+		*this->data = color;
+	}
+}
+
+// Color picker modal
+namespace h_gui {
+
+	modal_color_picker::modal_color_picker(const D2D1_COLOR_F def_color, const std::wstring& text, std::shared_ptr<window> window): modal_obj(window), current(def_color),text(text)
+	{
+		size_ = {
+		h_style::structural::control_width + gui_manager::res.rect_color_picekr_sz.x,
+		(h_style::structural::base::block_height * 5) + gui_manager::res.rect_color_picekr_sz.y
+		};
+	}
+
+	void modal_color_picker::bind_to_control(std::shared_ptr<controls::color_picker_control> ptr)
+	{
+		this->control_ptr = ptr;
+	}
+
+	blocks_count modal_color_picker::render(uint64_t tick, LPPOINT cursor_pos)
+	{
+
+		// Background
+		{
+			D2D1_RECT_F modal_window = {
+				 origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y
+			};
+			Draw_Rounded_rect_drop_shadow(modal_window);
+
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(modal_window, h_style::theme::border_radius, h_style::theme::border_radius),
+				true, h_style::theme::colors::base::bg, 1, h_style::theme::colors::window::border);
+
+
+		}
+
+
+		{
+			D2D1_RECT_F picker_loc = {
+				origin_.x + size_.x - gui_manager::res.rect_color_picekr_sz.x - h_style::structural::space,
+				origin_.y + size_.y - gui_manager::res.rect_color_picekr_sz.y - h_style::structural::space,
+				origin_.x + size_.x - h_style::structural::space,
+				origin_.y + size_.y - h_style::structural::space
+			};
+			D2D1_RECT_F preview_loc = {
+				picker_loc.left,
+				picker_loc.top - (h_style::structural::base::margin * 2) - (h_style::structural::base::block_height*2),
+				picker_loc.right,
+				picker_loc.top - (h_style::structural::base::margin * 2)
+			};
+
+			// Both shadows go under areas
+			Draw_Rounded_rect_drop_shadow(preview_loc, 1.0f);
+			Draw_Rounded_rect_drop_shadow(picker_loc, 1.0f);
+
+			gui_manager::renderer->DrawBitmap(gui_manager::res.COLOR_PICKER_SQUARE, picker_loc);
+
+
+			if (windows_utils::is_point_in_rect(picker_loc, cursor_pos))
+			{
+				windows_utils::get_color_from_curpos(cursor_pos, cursor_preview);
+				if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN)) {
+					current = cursor_preview;
+				}
+				gui_manager::renderer->DrawCustomRect(
+					{ cursor_pos->x + 3.0f,
+						cursor_pos->y - 15.0f,
+						cursor_pos->x + 18.0f,
+						(float)cursor_pos->y },
+					true, 1, cursor_preview, { 0,0,0,1 });
+			}
+
+
+
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(preview_loc, h_style::theme::border_radius, h_style::theme::border_radius),
+				true, current, 0, { 0,0,0,1 });
+
+
+
+			// Center separator
+			{
+				gui_manager::renderer->DrawBitmap(gui_manager::res.RL_GRADIENT,
+					{
+						picker_loc.left - h_style::structural::space - gui_manager::res.gradient_sz.x,
+						origin_.y + h_style::structural::window::top_bar_height,
+						picker_loc.left - h_style::structural::space,
+						origin_.y + size_.y
+					}, 0.8f);
+
+
+				gui_manager::renderer->DrawLineC(
+					{ picker_loc.left - h_style::structural::space, origin_.y + h_style::structural::window::top_bar_height },
+					{ picker_loc.left - h_style::structural::space, origin_.y + size_.y },
+					2, h_style::theme::colors::window::separator);
+			}
+
+		}
+
+
+		{
+			//top bar
+			gui_manager::renderer->DrawLineC(
+				{ origin_.x, origin_.y + h_style::structural::window::top_bar_height },
+				{ origin_.x + size_.x, origin_.y + h_style::structural::window::top_bar_height },
+				2, h_style::theme::colors::window::separator);
+		}
+
+
+
+		// if (gui_manager::input->IsMouseButtonJustPressed(DiInputManager::vM_LEFTBTN)) {
+		// 	this->control_ptr->set_color({ 0,1,0,1 });
+		// 	this->modal_target_window->end_modal();
+		// 	gui_manager::input->DeBounce();
+		// }
+
+
+		return 0;
 	}
 }
 
@@ -1044,6 +1264,9 @@ namespace h_gui
 		static D2D1_COLOR_F accent_color = h_style::theme::colors::base::accent_a;
 
 		{
+
+			Draw_Rounded_rect_drop_shadow({ origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y });
+
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect({origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y},
 				                  h_style::theme::border_radius,
@@ -1059,10 +1282,7 @@ namespace h_gui
 		                                           }, h_style::theme::colors::base::fg);
 
 
-
-
-
-		if (current_modal_selector != nullptr)
+		if (current_modal_ != nullptr)
 		{
 			this->hovered_ = false;
 			this->enabled_ = false;
@@ -1097,47 +1317,8 @@ namespace h_gui
 		}
 
 
-		// side bar separator
-		{
-			gui_manager::renderer->DrawLineC(
-				{
-					origin_.x + h_style::structural::window::side_bar_width,
-					origin_.y + h_style::structural::window::top_bar_height
-				},
-				{
-					origin_.x + h_style::structural::window::side_bar_width,
-					origin_.y + size_.y
-				},
-				2,
-				h_style::theme::colors::window::separator);
-		}
-		// Sidebar shadow
-		{
-			// gui_manager::renderer->DrawBitmap(gui_manager::res.RL_GRADIENT,
-			// 	{
-			// 		origin_.x + h_style::structural::window::side_bar_width -
-			// 		gui_manager::res.gradient_sz.x,
-			// 		origin_.y + h_style::structural::window::top_bar_height,
-			// 		origin_.x + h_style::structural::window::side_bar_width,
-			// 		origin_.y + size_.y
-			// 	}, 0.8f);
-		}
-
-		// top bar separator
-		{
-			float top_line_depth = origin_.y + h_style::structural::window::top_bar_height;
-			gui_manager::renderer->DrawLineC(
-				{origin_.x, top_line_depth},
-				{origin_.x + size_.x, top_line_depth},
-				2,
-				h_style::theme::colors::window::separator);
-		}
-
 
 		uint16_t blocks_ct = 0; // for the window top bar
-
-
-
 
 		for (const auto& cat : categories_)
 		{
@@ -1187,7 +1368,45 @@ namespace h_gui
 			}
 		}
 
-		if (current_modal_selector != nullptr)
+
+		// Sidebar shadow
+		{
+			gui_manager::renderer->DrawBitmap(gui_manager::res.RL_GRADIENT,
+				{
+					origin_.x + h_style::structural::window::side_bar_width -
+					gui_manager::res.gradient_sz.x,
+					origin_.y + h_style::structural::window::top_bar_height,
+					origin_.x + h_style::structural::window::side_bar_width,
+					origin_.y + size_.y
+				}, 0.8f);
+		}
+		// side bar separator
+		{
+			gui_manager::renderer->DrawLineC(
+				{
+					origin_.x + h_style::structural::window::side_bar_width,
+					origin_.y + h_style::structural::window::top_bar_height
+				},
+				{
+					origin_.x + h_style::structural::window::side_bar_width,
+					origin_.y + size_.y
+				},
+				2,
+				h_style::theme::colors::window::separator);
+		}
+
+		// top bar separator
+		{
+			float top_line_depth = origin_.y + h_style::structural::window::top_bar_height;
+			gui_manager::renderer->DrawLineC(
+				{ origin_.x, top_line_depth },
+				{ origin_.x + size_.x, top_line_depth },
+				2,
+				h_style::theme::colors::window::separator);
+		}
+
+
+		if (current_modal_ != nullptr)
 		{
 			{
 				gui_manager::renderer->DrawCustomRoundedRect(
@@ -1196,14 +1415,14 @@ namespace h_gui
 						h_style::theme::border_radius),
 					true, h_style::theme::colors::window::blocked_by_modal, 1, h_style::theme::colors::window::border);
 			}
-			current_modal_selector->set_origin(
+			current_modal_->set_origin(
 				{
-					origin_.x + (size_.x/2) - (h_style::structural::control_width/2),
-					origin_.y + (size_.y/2) - (current_modal_selector->get_size().y/2),
+					origin_.x + (size_.x/2) - (current_modal_->get_size().x / 2),
+					origin_.y + (size_.y/2) - (current_modal_->get_size().y/2),
 				});
 
-			current_modal_selector->calc_hovered(cursor_pos);
-			current_modal_selector->render(tick, cursor_pos);
+			current_modal_->calc_hovered(cursor_pos);
+			current_modal_->render(tick, cursor_pos);
 		}
 
 
@@ -1247,6 +1466,7 @@ namespace h_gui
 		return blocks_ct;
 	}
 
+
 	std::shared_ptr<category> window::add_category(const std::wstring& label)
 	{
 		std::shared_ptr<category> ptr = std::make_shared<category>(label, shared_from_this());
@@ -1265,14 +1485,14 @@ namespace h_gui
 		return this->currently_selected_section;
 	}
 
-	void window::set_modal(std::shared_ptr<modal_selector> ptr)
+	void window::set_modal(std::shared_ptr<modal_obj> ptr)
 	{
-		this->current_modal_selector = ptr;
+		this->current_modal_ = ptr;
 	}
 
 	void window::end_modal()
 	{
-		this->current_modal_selector = nullptr;
+		this->current_modal_ = nullptr;
 	}
 
 
@@ -1330,6 +1550,18 @@ namespace h_gui
 		s->bind_to_button(btn);
 		this->controls_.emplace_back(c);
 		this->modals.emplace_back(s);
+		return c;
+	}
+
+	std::shared_ptr<control> control_group::modal_color(D2D1_COLOR_F* data, std::wstring label,
+		std::shared_ptr<window> modal_target)
+	{
+		std::shared_ptr<modal_color_picker> picker = std::make_shared<modal_color_picker>(*data, label, modal_target);
+		auto ctrl = std::make_shared<controls::color_picker_control>(data,label,picker, modal_target);
+		std::shared_ptr<control> c = ctrl;
+		picker->bind_to_control(ctrl);
+		this->controls_.emplace_back(c);
+		this->modals.emplace_back(picker);
 		return c;
 	}
 
@@ -1531,6 +1763,18 @@ namespace h_gui
 		res.tab_edge_right = gui_manager::renderer->CreateBitmapImageFromFile(path / "tab_edge_right.png");
 		res.RL_GRADIENT = gui_manager::renderer->CreateBitmapImageFromFile(path / "RL_GRADIENT.png");
 		res.BT_GRADIENT = gui_manager::renderer->CreateBitmapImageFromFile(path / "BT_GRADIENT.png");
+
+
+
+
+		res.RECT_TL_CORNER = gui_manager::renderer->CreateBitmapImageFromFile(path /"SHADOW_RECT"/ "TL_CORNER.png");
+		res.RECT_BL_CORNER = gui_manager::renderer->CreateBitmapImageFromFile(path / "SHADOW_RECT" / "BL_CORNER.png");
+		res.RECT_BR_CORNER = gui_manager::renderer->CreateBitmapImageFromFile(path / "SHADOW_RECT" / "BR_CORNER.png");
+		res.RECT_LEFT_BORDER = gui_manager::renderer->CreateBitmapImageFromFile(path / "SHADOW_RECT" / "LEFT_BORDER.png");
+		res.RECT_BOTTOM_BORDER = gui_manager::renderer->CreateBitmapImageFromFile(path / "SHADOW_RECT" / "BOTTOM_BORDER.png");
+
+		res.COLOR_PICKER_SQUARE = gui_manager::renderer->CreateBitmapImageFromFile(path / "color_picker_square.png");
+
 	}
 
 	Renderer::D2DBitmapID gui_manager::create_resource_img(std::wstring img_name)

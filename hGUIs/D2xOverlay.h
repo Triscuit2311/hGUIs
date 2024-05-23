@@ -6,6 +6,7 @@ namespace Renderer {
 
 	typedef void(*DirectOverlayCallback)(UINT32 width, UINT32 height);
 	void RunOverlayThread(DirectOverlayCallback callback);
+	void RunOverlayThread(DirectOverlayCallback callback);
 	typedef unsigned long D2DBitmapID;
 
 	/**
@@ -107,7 +108,7 @@ namespace Renderer {
 		void PushRadialColor();
 		void PopRadialColor();
 
-
+		static HWND GetOverlayHWND();
 		static inline std::atomic_bool exit = false;
 		static HWND EnumHwnd;
 		static DirectOverlayCallback DrawLoopCallback;
@@ -209,6 +210,8 @@ namespace Renderer {
 		void DrawStringCenteredC(WCHAR const* str, UINT32 strLength, float fontSize, D2D1_POINT_2F origin,
 		                         D2D1_COLOR_F col);
 		void DrawStringCenteredC(std::wstring str, float fontSize, D2D1_POINT_2F origin, D2D1_COLOR_F col);
+		void DrawStringCenteredSelectiveC(std::wstring str, float fontSize, D2D1_POINT_2F origin, D2D1_COLOR_F col,
+		                                  bool center_x = true, bool center_y = true);
 
 
 		/**

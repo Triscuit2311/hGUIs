@@ -6,6 +6,8 @@
 
 namespace h_gui
 {
+	class modal_obj;
+	class modal_color_picker;
 	class modal_selector;
 	class gui_manager;
 	class async_invoker;
@@ -217,6 +219,29 @@ namespace h_gui
 			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 			void set_option_text(std::wstring text);
 		};
+
+		class color_picker_control final : public control
+		{
+			std::shared_ptr<modal_color_picker> modal_ptr;
+			std::shared_ptr<window> modal_target_window;
+			std::wstring text;
+			D2D1_COLOR_F* data;
+		public:
+			color_picker_control(D2D1_COLOR_F* data, std::wstring label, std::shared_ptr<modal_color_picker> modal_ptr, const std::shared_ptr<window>& modal_target_window) : control(),
+				data(data), modal_ptr(modal_ptr), modal_target_window(modal_target_window)
+			{
+				text = std::move(label);
+				size_ = {
+					h_style::structural::control_width
+					+ (h_style::structural::base::pad * 2),
+					h_style::structural::base::block_height * 2
+				};
+			}
+			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
+			void set_color(D2D1_COLOR_F color) const;
+		};
+
+
 	}
 
 	class control_group final : public interactable, public renderable
@@ -228,7 +253,7 @@ namespace h_gui
 		bool named_;
 
 		std::vector<std::shared_ptr<control>> controls_{};
-		std::vector<std::shared_ptr<modal_selector>> modals{};
+		std::vector<std::shared_ptr<modal_obj>> modals{};
 
 	public:
 		control_group() : interactable({}, true), renderable(), collapsible_(false), named_(false)
@@ -261,19 +286,43 @@ namespace h_gui
 
 		std::shared_ptr<control> modal_selection(size_t* data, std::wstring button_label_fmt, 
 			std::wstring modal_label, std::vector<std::wstring> options, std::shared_ptr<window> modal_target);
+
+		std::shared_ptr<control> modal_color(D2D1_COLOR_F* data, std::wstring label,  std::shared_ptr<window> modal_target);
 	};
 
-	class modal_selector : public interactable, public renderable
+	class modal_obj : public interactable, public renderable
+	{
+	protected:
+		std::shared_ptr<window> modal_target_window;
+	public:
+		modal_obj(std::shared_ptr<window> window) : interactable({0,0}, true), modal_target_window(window)
+		{
+		}
+	};
+
+	class modal_selector : public modal_obj
 	{
 		std::wstring text;
 		std::vector<std::wstring> options;
 		std::shared_ptr<controls::selection_button> button_ptr;
-		std::shared_ptr<window> modal_target_window;
 		size_t* data;
 	public:
 		modal_selector(size_t* data, const std::wstring& text, std::vector<std::wstring> options, std::shared_ptr<window> window);
 		void bind_to_button(std::shared_ptr<controls::selection_button> ptr);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
+	};
+
+	class modal_color_picker : public modal_obj
+	{
+		std::wstring text;
+		D2D1_COLOR_F current{};
+		D2D1_COLOR_F cursor_preview = { 1,1,1,1 };
+		std::shared_ptr<controls::color_picker_control> control_ptr;
+	public:
+		modal_color_picker(D2D1_COLOR_F def_color, const std::wstring& text, std::shared_ptr<window> window);
+		void bind_to_control(std::shared_ptr<controls::color_picker_control> ptr);
+		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
+		
 	};
 
 
@@ -343,7 +392,7 @@ namespace h_gui
 	{
 	private:
 		std::shared_ptr<section> currently_selected_section = nullptr;
-		std::shared_ptr<modal_selector> current_modal_selector = nullptr;
+		std::shared_ptr<modal_obj> current_modal_ = nullptr;
 		std::vector<std::shared_ptr<category>> categories_{};
 		std::shared_ptr<sidebar_widget> sb_widget_top = std::make_shared<sidebar_widget>(L"TOP WIDGET");
 		std::shared_ptr<sidebar_widget> sb_widget_bottom = std::make_shared<sidebar_widget>(L"BOTTOM WIDGET");
@@ -365,7 +414,7 @@ namespace h_gui
 		std::shared_ptr<category> add_category(const std::wstring& label);
 		void set_selected_tab_group(std::shared_ptr<section> section);
 		std::shared_ptr<section> get_selected_section();
-		void set_modal(std::shared_ptr<modal_selector> ptr);
+		void set_modal(std::shared_ptr<modal_obj> ptr);
 		void end_modal();
 	};
 
@@ -389,6 +438,19 @@ namespace h_gui
 		const D2D1_POINT_2F gradient_sz = {30, 30};
 		Renderer::D2DBitmapID RL_GRADIENT = 0;
 		Renderer::D2DBitmapID BT_GRADIENT = 0;
+
+
+		const D2D1_POINT_2F rect_sprite_sz = { 30, 30 };
+		Renderer::D2DBitmapID RECT_TL_CORNER;
+		Renderer::D2DBitmapID RECT_BL_CORNER;
+		Renderer::D2DBitmapID RECT_BR_CORNER;
+		Renderer::D2DBitmapID RECT_LEFT_BORDER;
+		Renderer::D2DBitmapID RECT_BOTTOM_BORDER;
+
+
+		const D2D1_POINT_2F rect_color_picekr_sz = { 250, 250 };
+		Renderer::D2DBitmapID COLOR_PICKER_SQUARE;
+
 	};
 
 	class gui_manager

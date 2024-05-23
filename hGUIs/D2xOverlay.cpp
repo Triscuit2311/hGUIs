@@ -287,6 +287,52 @@ namespace Renderer
 		PopSolidColor();
 	}
 
+	void D2DxOverlay::DrawStringCenteredSelectiveC(std::wstring str, const float fontSize, const D2D1_POINT_2F origin,
+		const D2D1_COLOR_F col, bool center_x, bool center_y)
+	{
+		PushSolidColor();
+		SetSolidColor(col);
+		// Get the client area of the window.
+		RECT tagRect;
+		GetClientRect(OverlayHwnd, &tagRect);
+		UINT32 len = static_cast<UINT32>(str.length());
+
+		// Calculate the maximum width and height of the text.
+		const auto maxWidth = static_cast<float>(tagRect.right - tagRect.left);
+		const auto maxHeight = static_cast<float>(tagRect.bottom - tagRect.top);
+
+		// Create a text layout for the given string.
+		const HRESULT textLayoutResult = m_DWriteFactory->CreateTextLayout(
+			str.c_str(),
+			len,
+			m_WriteTextFormat,
+			maxWidth, maxHeight,
+			&m_DefaultWriteTextLayout);
+
+		// If the text layout was successfully created, set its font size and draw it.
+		if (SUCCEEDED(textLayoutResult))
+		{
+			m_DefaultWriteTextLayout->SetFontSize(fontSize, { 0, len });
+
+			// Get the metrics of the text layout to determine its width and height.
+			DWRITE_TEXT_METRICS textMetrics;
+			m_DefaultWriteTextLayout->GetMetrics(&textMetrics);
+
+			// Calculate the new origin point to center the text.
+			D2D1_POINT_2F centeredOrigin;
+			centeredOrigin.x = center_x ? (origin.x - textMetrics.width / 2) : origin.x;
+			centeredOrigin.y = center_y ? (origin.y - textMetrics.height / 2): origin.y;
+
+			// Draw the text layout at the new origin point.
+			m_D2D1RenderTarget->DrawTextLayout(centeredOrigin, m_DefaultWriteTextLayout, m_D2D1SolidColorBrush);
+
+			// Release the text layout.
+			m_DefaultWriteTextLayout->Release();
+			m_DefaultWriteTextLayout = nullptr;
+		}
+		PopSolidColor();
+	}
+
 	void D2DxOverlay::DrawLine(const D2D1_POINT_2F origin, const D2D1_POINT_2F destination,
 	                           const float thickness = 1) const
 	{
@@ -789,6 +835,11 @@ namespace Renderer
 		m_RadialColorQueue.pop();
 	}
 
+	HWND D2DxOverlay::GetOverlayHWND()
+	{
+		return Instance->OverlayHwnd;
+	}
+
 	HWND D2DxOverlay::GetTargetHwndRef() const
 	{
 		return this->TargetHwnd;
@@ -970,6 +1021,26 @@ namespace Renderer
 
 	void D2DxOverlay::ToggleAcrylicEffect(bool enable)
 	{
+
+		HRESULT hr = S_OK;
+		DWM_BLURBEHIND bb = { 0 };
+
+		if (enable) {
+			// Enable blur behind window
+			bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
+			bb.fEnable = TRUE;
+			bb.hRgnBlur = NULL;
+		}
+		else {
+			// Disable blur behind window
+			bb.dwFlags = DWM_BB_ENABLE;
+			bb.fEnable = FALSE;
+		}
+
+		hr = DwmEnableBlurBehindWindow(OverlayHwnd, &bb);
+		if (FAILED(hr)) {
+			// Handle error
+		}
 
 		// WINDOWS 10 ONLY
 		// static HMODULE hUser = LoadLibrary(L"user32.dll");

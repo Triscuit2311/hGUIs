@@ -24,6 +24,8 @@ bool use_desktop_blur = true; //broken in windows 11
 bool block_inputs_in_menu = true;
 bool exit_thread = false;
 
+D2D1_COLOR_F myColor = {1,0,0,1};
+
 size_t selection = 0;
 // Runs once at start-time, initializes all the windows, groups and controls for the GUI
 void setup_gui(std::shared_ptr<h_gui::workspace> ws)
@@ -33,6 +35,8 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 	auto cat = win1->add_category(L"CAT1");
 	auto sec = cat->add_section(L"Global", L"globeico.png");
 	auto tab = sec->add_tab(L"General");
+	sec->add_tab(L"Extras");
+	sec->add_tab(L"Settings");
 
 	auto grp = tab->add_group(L"Group1");
 
@@ -42,6 +46,10 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 	grp->slider_long(&i32, -120, 120, L"Slide %d mph", [](long i) {});
 	grp->modal_selection(&selection, L"Aim Bone: %s",
 	 	L"Select Aim Bone", { L"Head", L"Neck", L"Chest", L"Pelvis", L"Wiener", L"Extremities"}, win1);
+
+
+	grp->modal_color(&myColor, L"My Color", win1);
+
 
 	// grp->toggle(&b[1], L"My");
 	// grp->toggle(&b[2], L"Noggle");

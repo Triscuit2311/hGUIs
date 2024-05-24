@@ -33,7 +33,9 @@ void setup_gui(std::shared_ptr<h_gui::workspace> ws)
 	auto win1 = ws->add_window(L"windonk 1", {100, 100});
 
 	auto cat = win1->add_category(L"CAT1");
-	auto sec = cat->add_section(L"Global", L"globeico.png");
+	auto sec = cat->add_section(L"Global", L"icons/settings.png");
+	cat->add_section(L"a", L"icons/settings.png");
+	cat->add_section(L"b", L"icons/settings.png");
 	auto tab = sec->add_tab(L"General");
 	sec->add_tab(L"Extras");
 	sec->add_tab(L"Settings");

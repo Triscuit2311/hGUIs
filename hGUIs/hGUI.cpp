@@ -760,29 +760,55 @@ namespace h_gui
 
 	blocks_count section::render(uint64_t tick, LPPOINT cursor_pos)
 	{
-		if (selected_)
 		{
+			const D2D1_RECT_F pos = {
+			origin_.x,
+			origin_.y,
+			origin_.x + size_.x - h_style::structural::space,
+			origin_.y + size_.y
+			};
+
+			Draw_Rounded_rect_drop_shadow(pos, shadow_opacity_);
+
 			gui_manager::renderer->DrawCustomRoundedRect(
-				D2D1::RoundedRect(
-					{
-						origin_.x,
-						origin_.y,
-						origin_.x + size_.x - h_style::structural::space,
-						origin_.y + size_.y
-					}, h_style::theme::border_radius, h_style::theme::border_radius),
-				true, h_style::theme::colors::section::selected_bg,
-				2, h_style::theme::colors::section::selected_stroke);
+				D2D1::RoundedRect(pos, h_style::theme::border_radius, h_style::theme::border_radius),
+				true,
+				{
+					h_style::theme::colors::section::selected_bg.r,
+					h_style::theme::colors::section::selected_bg.g,
+					h_style::theme::colors::section::selected_bg.b,
+					selected_opacity_
+				},
+				2,
+				{
+					h_style::theme::colors::section::selected_stroke.r,
+					h_style::theme::colors::section::selected_stroke.g,
+					h_style::theme::colors::section::selected_stroke.b,
+					selected_opacity_
+				});
+
+			if (selected_)
+			{
+				selected_opacity_ = anim::lerp(selected_opacity_, 1.0f, 0.2f);
+				shadow_opacity_ = anim::lerp(shadow_opacity_, 0.8f, 0.03f);
+			}
+			else
+			{
+				selected_opacity_ = anim::lerp(selected_opacity_, 0.0f, 0.3f);
+				shadow_opacity_ = anim::lerp(shadow_opacity_, 0.0f, 0.5f);
+			}
+
 		}
 
 
-		// gui_manager::renderer->DrawBitmap(this->icon,
-		//                                   {
-		// 	                                  origin_.x + h_style::structural::base::margin,
-		// 	                                  origin_.y + (size_.y / 2) - (icon_sz.y / 2),
-		// 	                                  origin_.x + h_style::structural::base::margin + icon_sz.x,
-		// 	                                  origin_.y + (size_.y / 2) + (icon_sz.y / 2),
-		//                                   },
-		//                                   1);
+		gui_manager::renderer->DrawBitmap(this->icon,
+		                                  {
+			                                  origin_.x + h_style::structural::base::margin,
+			                                  origin_.y + (size_.y / 2) - (icon_sz.y / 2),
+			                                  origin_.x + h_style::structural::base::margin + icon_sz.x,
+			                                  origin_.y + (size_.y / 2) + (icon_sz.y / 2),
+		                                  },
+		                                  (hovered_ || selected_) ? 0.8f : 0.6f);
 
 
 		gui_manager::renderer->DrawStringCenteredC(text,
@@ -1012,7 +1038,6 @@ namespace h_gui {
 
 	}
 }
-
 
 // color picker control
 namespace h_gui {
@@ -1310,9 +1335,16 @@ namespace h_gui
 		{
 			float vert_offset = (blocks * (h_style::structural::base::block_height +
 				h_style::structural::base::pad)) - h_style::structural::base::pad;
+			const bool selected = selected_section == sec;
 
-			sec->set_origin({origin_.x + h_style::structural::base::margin, origin_.y + vert_offset});
-			sec->set_selected(selected_section == sec);
+
+			sec->set_origin(
+				{
+					origin_.x + (h_style::structural::base::margin * selected? 2 : 1),
+					origin_.y + vert_offset - (selected? h_style::structural::base::pad : 0)
+				});
+
+			sec->set_selected(selected);
 
 			if (!enabled_)
 			{

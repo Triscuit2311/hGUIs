@@ -203,7 +203,6 @@ namespace h_gui
 			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		};
 
-
 		class selection_button final : public control
 		{
 			std::shared_ptr<modal_selector> modal_ptr;
@@ -245,7 +244,6 @@ namespace h_gui
 			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 			void set_color(D2D1_COLOR_F color) const;
 		};
-
 
 	}
 
@@ -338,7 +336,6 @@ namespace h_gui
 		
 	};
 
-
 	class tab : public interactable, public renderable
 	{
 		std::vector<std::shared_ptr<control_group>> groups_;
@@ -365,6 +362,8 @@ namespace h_gui
 
 	class section : public interactable, public renderable
 	{
+		float selected_opacity_ = 0.0f;
+		float shadow_opacity_ = 0.0f;
 		std::wstring text;
 		bool selected_ = false;
 		std::shared_ptr<tab_group> section_tabs = nullptr;

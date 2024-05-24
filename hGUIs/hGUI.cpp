@@ -808,14 +808,14 @@ namespace h_gui
 			                                  origin_.x + h_style::structural::base::margin + icon_sz.x,
 			                                  origin_.y + (size_.y / 2) + (icon_sz.y / 2),
 		                                  },
-		                                  (hovered_ || selected_) ? 0.8f : 0.6f);
+		                                  shadow_opacity_ < 0.3f ? 0.3f : min(shadow_opacity_, 0.6f));
 
 
 		gui_manager::renderer->DrawStringCenteredC(text,
 		                                           h_style::theme::text::font_size_L,
 		                                           {
 
-			                                           origin_.x + ((size_.x - icon_sz.x) / 2),
+			                                           origin_.x + icon_sz.x + ((size_.x - icon_sz.x) / 2),
 			                                           origin_.y + (size_.y / 2)
 
 		                                           },
@@ -1209,7 +1209,7 @@ namespace h_gui {
 			
 
 			// Preview color
-			gui_manager::renderer->DrawBitmap(gui_manager::res.COLOR_PICKER_PREVIEW_BG, preview_loc);
+			gui_manager::renderer->DrawBitmap(gui_manager::res.COLOR_PICKER_PREVIEW_BG, { preview_loc.left, preview_loc.top + 1, preview_loc.right, preview_loc.bottom-1 });
 
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect(preview_loc, h_style::theme::border_radius, h_style::theme::border_radius),
@@ -1340,7 +1340,7 @@ namespace h_gui
 
 			sec->set_origin(
 				{
-					origin_.x + (h_style::structural::base::margin * selected? 2 : 1),
+					origin_.x + (h_style::structural::base::margin * selected? 3 : 1),
 					origin_.y + vert_offset - (selected? h_style::structural::base::pad : 0)
 				});
 
@@ -1586,7 +1586,7 @@ namespace h_gui
 						this->origin_ = anim::lerp_2f(
 							this->origin_,
 							{cursor_pos->x - drag_anchor_.x, cursor_pos->y - drag_anchor_.y},
-							0.55f);
+							0.25f);
 					}
 					else
 					{
@@ -1714,13 +1714,6 @@ namespace h_gui
 		};
 
 
-		gui_manager::renderer->DrawStringC(label_,
-		                                   h_style::theme::text::font_size_m,
-		                                   {
-			                                   origin_.x + (h_style::structural::base::margin * 2) +
-			                                   h_style::structural::base::pad,
-			                                   origin_.y
-		                                   }, h_style::theme::colors::base::fg);
 		// Border
 		{
 			auto border_color = h_style::theme::colors::group::border;
@@ -1769,6 +1762,13 @@ namespace h_gui
 			}
 			blocks_ += ctrl->render(tick, cursor_pos);
 		}
+
+		gui_manager::renderer->DrawStringCenteredC(label_,
+			h_style::theme::text::font_size_s,
+			{
+				origin_.x + (size_.x/2),
+				origin_.y + (h_style::structural::window::top_bar_height / 2)
+			}, h_style::theme::colors::base::fg);
 
 
 		return blocks_;

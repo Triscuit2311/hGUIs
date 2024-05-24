@@ -28,92 +28,40 @@ D2D1_COLOR_F myColor = {0.7f,0.2f,0.8f,0.65f};
 
 size_t selection = 0;
 // Runs once at start-time, initializes all the windows, groups and controls for the GUI
-void setup_gui(std::shared_ptr<h_gui::workspace> ws)
+void setup_gui(const std::shared_ptr<h_gui::workspace>& ws)
 {
-	auto win1 = ws->add_window(L"windonk 1", {100, 100});
+	const auto win1 = ws->add_window(L"hGUI Prototype v0.63b", {500, 200});
 
-	auto cat = win1->add_category(L"CAT1");
-	auto sec = cat->add_section(L"Global", L"icons/settings.png");
-	cat->add_section(L"a", L"icons/settings.png");
-	cat->add_section(L"b", L"icons/settings.png");
-	auto tab = sec->add_tab(L"General");
-	sec->add_tab(L"Extras");
-	sec->add_tab(L"Settings");
+	const auto cat1 = win1->add_category(L"CAT1");
+	const auto aim = cat1->add_section(L"Aimbot", L"icons/target.png");
 
-	auto grp = tab->add_group(L"Group1");
 
+	const auto aim_gen = aim->add_tab(L"General");
+	const auto grp = aim_gen->add_group(L"Group1");
 	grp->toggle(&b[12], L"Buddle");
 	grp->toggle(&b[0], L"Toggle");
 	grp->slider_double(&f64, -10, 10, L"Slip Speed: %.2lf M/s", [](long i) {});
 	grp->slider_long(&i32, -120, 120, L"Slide %d mph", [](long i) {});
 	grp->modal_selection(&selection, L"Aim Bone: %s",
-	 	L"Select Aim Bone", { L"Head", L"Neck", L"Chest", L"Pelvis", L"Wiener", L"Extremities"}, win1);
-
-
+		L"Select Aim Bone", { L"Head", L"Neck", L"Chest", L"Pelvis", L"Wiener", L"Extremities" }, win1);
 	grp->modal_color(&myColor, L"My Color", win1);
 
 
-	// grp->toggle(&b[1], L"My");
-	// grp->toggle(&b[2], L"Noggle");
-	// grp->toggle(&b[3], L"Like");
-	// grp->toggle(&b[4], L"Corn");
-	// grp->toggle(&b[5], L"On a");
-	// grp->toggle(&b[6], L"Coggle");
-	//
-	// grp = tab->add_group(L"Group1");
-	// grp->toggle(&b[10], L"Huddle");
-	// grp->toggle(&b[11], L"MY");
-	// grp->toggle(&b[12], L"Buddle");
-	// grp->toggle(&b[13], L"Like");
-	// grp->toggle(&b[14], L"Corn");
-	// grp->toggle(&b[15], L"In a");
-	// grp->toggle(&b[16], L"Cuddle");
-	//
-	// grp = tab->add_group(L"Group2");
-	// grp->slider_double(&f64, -10, 10, L"Slip Speed: %.2lf M/s", [](long i) {});
-	// grp->slider_long(&i32, -120, 120, L"Slide %d mph", [](long i) {});
-	//
-	//
-	// grp = tab->add_group(L"Group3");
-	// grp->toggle(&b[14], L"Bingo");
-	// grp->toggle(&b[15], L"Bango");
-	// grp->toggle(&b[16], L"Bongo");
-	// grp->label(L"I don't wanna");
-	// grp->label(L"Leave the congo");
-	//
-	//
-	//
-	// tab = sec->add_tab(L"Advanced");
-	// grp = tab->add_group(L"Group1");
-	// grp->slider_double(&f64a, -100, 1000000, L"Double A: %.2lf", [](long i) {});
-	// grp->slider_long(&i32b, 0, 99999999999999, L"Long B: %ld", [](long i) {});
-	// grp = tab->add_group(L"Group1");
-	// grp->slider_double(&f64a, -100, 1000000, L"(also) Double A: %.2lf", [](long i) {});
-	// grp->slider_long(&i32b, 0, 99999999999999, L"(also) Long B: %ld", [](long i) {});
-	//
-	//
-	//
-	//
-	//
-	// cat = win1->add_category(L"CAT1");
-	// sec = cat->add_section(L"Visuals", L"eye_1_ico.png");
-	// tab = sec->add_tab(L"General");
-	// grp = tab->add_group(L"Group1");
-	// grp->label(L"Nothing!");
-	// grp = tab->add_group(L"Group1");
-	// grp->label(L"Nothing!");	grp = tab->add_group(L"Group1");
-	// grp->label(L"Nothing!");
-	// sec = cat->add_section(L"Item ESP", L"eye_2_ico.png");
-	// tab = sec->add_tab(L"General");
-	// grp = tab->add_group(L"Group1");
-	// grp->label(L"Nothing!");
-	// grp = tab->add_group(L"Group1");
-	// grp->label(L"Nothing!");
-	// grp = tab->add_group(L"Group1");
-	// grp->label(L"Nothing!");
-	// tab = sec->add_tab(L"Advanced");
-	// grp = tab->add_group(L"Group1");
-	// grp->label(L"Nothing!");
+	auto aim_tar = aim->add_tab(L"Target Select");
+	auto aim_adv = aim->add_tab(L"Advanced");
+
+	cat1->add_section(L"ESP", L"icons/eye_scan.png");
+	cat1->add_section(L"Loot Filter", L"icons/crown.png");
+	cat1->add_section(L"Radar", L"icons/radar.png");
+
+	auto cat2 = win1->add_category(L"CAT2");
+	cat2->add_section(L"Miscellaneous", L"icons/magic_wand.png");
+	cat2->add_section(L"Experimental", L"icons/test_tube.png");
+
+	auto cat3 = win1->add_category(L"CAT3");
+	cat3->add_section(L"Colors", L"icons/pallete.png");
+	cat3->add_section(L"Hotkeys", L"icons/lightning.png");
+	cat3->add_section(L"System", L"icons/settings.png");
 
 }
 
@@ -123,7 +71,7 @@ void load_resources(Renderer::D2DxOverlay* renderer)
 {
 	//renderer->LoadSystemFontAsDefault(L"Jetbrains MONO"); // TODO: Load font from bytes
 	renderer->LoadSystemFontAsDefault(L"Segoe UI"); // TODO: Load font from bytes
-	splash_img = h_gui::globals::gui->create_resource_img(L"dealwithit_glow.png");
+	splash_img = h_gui::globals::gui->create_resource_img(L"splash.png");
 }
 
 
@@ -166,20 +114,41 @@ void render_direct_post(UINT32 width, UINT32 height, LPPOINT cur_pos, const Rend
 {
 	// Splash Screen
 	{
-		static float target_opac = 1.1f;
-		static float curr_opac = 0.0f;
-		static float alpha = 0.01f;
-		if (curr_opac < -0.1f) { return; }
-		curr_opac = anim::lerp(curr_opac, target_opac, alpha);
-		if (curr_opac > 1.0f)
-		{
-			target_opac = -2.f;
+		static bool show_splash = true;
+
+		if (show_splash) {
+			static bool set_once = false;
+
+			if (!set_once) {
+				if (use_desktop_blur) { h_gui::globals::gui->renderer->ToggleAcrylicEffect(true); }
+				if (block_inputs_in_menu) { h_gui::globals::gui->renderer->SetInputInterception(true); }
+				set_once = true;
+			}
+
+			static float target_opac = 1.1f;
+			static float curr_opac = 0.001f;
+			static float alpha = 0.04f;
+			if (curr_opac < 0.0001f)
+			{
+				show_splash = false;
+				if (!show_menu)
+				{
+					show_menu = true;
+					if (use_desktop_blur) { h_gui::globals::gui->renderer->ToggleAcrylicEffect(show_menu); }
+					if (block_inputs_in_menu) { h_gui::globals::gui->renderer->SetInputInterception(show_menu); }
+				}
+			}
+			curr_opac = anim::lerp(curr_opac, target_opac, alpha);
+			if (curr_opac > 1.0f)
+			{
+				target_opac = -0.002f;
+			}
+			renderer->DrawBitmap(splash_img,
+				{
+					width / 2.0f - 512.0f, height / 2.0f - 512.0f, width / 2.0f + 512.0f,
+					height / 2.0f + 512.0f
+				}, curr_opac);
 		}
-		// renderer->DrawBitmap(splash_img,
-		//                      {
-		// 	                     width / 2.0f - 128.0f, height / 2.0f - 128.0f, width / 2.0f + 128.0f,
-		// 	                     height / 2.0f + 128.0f
-		//                      }, curr_opac);
 	}
 }
 

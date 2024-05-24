@@ -367,7 +367,7 @@ namespace h_gui
 		std::wstring text;
 		bool selected_ = false;
 		std::shared_ptr<tab_group> section_tabs = nullptr;
-		const D2D1_POINT_2F icon_sz = {35, 35};
+		const D2D1_POINT_2F icon_sz = {30, 30};
 		Renderer::D2DBitmapID icon;
 
 	public:

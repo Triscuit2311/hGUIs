@@ -1022,50 +1022,50 @@ namespace Renderer
 	void D2DxOverlay::ToggleAcrylicEffect(bool enable)
 	{
 
-		HRESULT hr = S_OK;
-		DWM_BLURBEHIND bb = { 0 };
-
-		if (enable) {
-			// Enable blur behind window
-			bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
-			bb.fEnable = TRUE;
-			bb.hRgnBlur = NULL;
-		}
-		else {
-			// Disable blur behind window
-			bb.dwFlags = DWM_BB_ENABLE;
-			bb.fEnable = FALSE;
-		}
-
-		hr = DwmEnableBlurBehindWindow(OverlayHwnd, &bb);
-		if (FAILED(hr)) {
-			// Handle error
-		}
-
-		// WINDOWS 10 ONLY
-		// static HMODULE hUser = LoadLibrary(L"user32.dll");
-		// ACCENT_POLICY accentPolicy;
+		// HRESULT hr = S_OK;
+		// DWM_BLURBEHIND bb = { 0 };
 		//
 		// if (enable) {
-		// 	// ACCENT_ENABLE_BLURBEHIND
-		// 	accentPolicy = ACCENT_POLICY{ ACCENT_ENABLE_ACRYLICBLURBEHIND, 0, 0x01000000, 0 };
+		// 	// Enable blur behind window
+		// 	bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
+		// 	bb.fEnable = TRUE;
+		// 	bb.hRgnBlur = NULL;
 		// }
 		// else {
-		// 	accentPolicy = { ACCENT_DISABLED, 2, 0x00000000, 0 };
+		// 	// Disable blur behind window
+		// 	bb.dwFlags = DWM_BB_ENABLE;
+		// 	bb.fEnable = FALSE;
 		// }
 		//
-		// WINDOWCOMPOSITIONATTRIBDATA data;
-		// data.Attrib = WCA_ACCENT_POLICY;
-		// data.pvData = &accentPolicy;
-		// data.cbData = sizeof(accentPolicy);
-		//
-		//
-		// if (hUser) {
-		// 	auto SetWindowCompositionAttribute = reinterpret_cast<pSetWindowCompositionAttribute>(GetProcAddress(hUser, "SetWindowCompositionAttribute"));
-		// 	if (SetWindowCompositionAttribute) {
-		// 		SetWindowCompositionAttribute(OverlayHwnd, &data);
-		// 	}
+		// hr = DwmEnableBlurBehindWindow(OverlayHwnd, &bb);
+		// if (FAILED(hr)) {
+		// 	// Handle error
 		// }
+
+		// WINDOWS 10 ONLY
+		static HMODULE hUser = LoadLibrary(L"user32.dll");
+		ACCENT_POLICY accentPolicy;
+		
+		if (enable) {
+			// ACCENT_ENABLE_BLURBEHIND
+			accentPolicy = ACCENT_POLICY{ ACCENT_ENABLE_ACRYLICBLURBEHIND, 0, 0x01000000, 0 };
+		}
+		else {
+			accentPolicy = { ACCENT_DISABLED, 2, 0x00000000, 0 };
+		}
+		
+		WINDOWCOMPOSITIONATTRIBDATA data;
+		data.Attrib = WCA_ACCENT_POLICY;
+		data.pvData = &accentPolicy;
+		data.cbData = sizeof(accentPolicy);
+		
+		
+		if (hUser) {
+			auto SetWindowCompositionAttribute = reinterpret_cast<pSetWindowCompositionAttribute>(GetProcAddress(hUser, "SetWindowCompositionAttribute"));
+			if (SetWindowCompositionAttribute) {
+				SetWindowCompositionAttribute(OverlayHwnd, &data);
+			}
+		}
 	}
 
 

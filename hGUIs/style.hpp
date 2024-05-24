@@ -138,6 +138,10 @@ namespace h_style
 
 
 
+				constexpr D2D1_COLOR_F cancel_button_fill{rgb_to_color_f(163, 60, 60,1)};
+
+
+
 				constexpr D2D1_COLOR_F slider{0.6f, 0.6f, 0.6f, 0.7f};
 				constexpr D2D1_COLOR_F slider_hovered{0.6f, 0.6f, 0.6f, 0.9f};
 				constexpr D2D1_COLOR_F slider_handle{0.6f, 0.6f, 0.6f, 1.0f};

@@ -19,12 +19,11 @@ long i32b = 1000;
 double f64a = 99999.0;
 
 
-bool show_menu = false;
-bool use_desktop_blur = true; //broken in windows 11
-bool block_inputs_in_menu = true;
+bool use_splash = false;
 bool exit_thread = false;
 
 D2D1_COLOR_F myColor = {0.7f,0.2f,0.8f,0.65f};
+DiInputManager::DiInput myHotkey = DiInputManager::vKb_LALT;
 
 size_t selection = 0;
 // Runs once at start-time, initializes all the windows, groups and controls for the GUI
@@ -45,6 +44,8 @@ void setup_gui(const std::shared_ptr<h_gui::workspace>& ws)
 	grp->modal_selection(&selection, L"Aim Bone: %s",
 		L"Select Aim Bone", { L"Head", L"Neck", L"Chest", L"Pelvis", L"Wiener", L"Extremities" }, win1);
 	grp->modal_color(&myColor, L"My Color", win1);
+	grp->modal_hotkey(&myHotkey, L"My Hotkey: %s", L"My Hotkey", win1);
+
 
 
 	auto aim_tar = aim->add_tab(L"Target Select");
@@ -87,9 +88,7 @@ void pre_render(std::shared_ptr<DiInputManager> inputs, Renderer::D2DxOverlay* r
 
 	if (inputs->IsInputJustReleased(DiInputManager::vKb_INSERT))
 	{
-		show_menu = !show_menu;
-		if (use_desktop_blur) { renderer->ToggleAcrylicEffect(show_menu); }
-		if (block_inputs_in_menu) { renderer->SetInputInterception(show_menu); }
+		h_gui::gui_manager::toggle_menu();
 	}
 }
 
@@ -103,10 +102,8 @@ void render_direct_pre(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::D
 // Note: all components (windows, groups, controls) are rendered automatically
 void render_gui(UINT32 width, UINT32 height, LPPOINT cur_pos)
 {
-	if (show_menu)
-	{
-		h_gui::globals::gui->render(width, height, 0, cur_pos);
-	}
+
+	h_gui::globals::gui->render(width, height, 0, cur_pos);
 }
 
 // Draw directly to the screen ON TOP of the main GUI
@@ -114,14 +111,11 @@ void render_direct_post(UINT32 width, UINT32 height, LPPOINT cur_pos, const Rend
 {
 	// Splash Screen
 	{
-		static bool show_splash = true;
-
-		if (show_splash) {
+		if (use_splash) {
 			static bool set_once = false;
 
 			if (!set_once) {
-				if (use_desktop_blur) { h_gui::globals::gui->renderer->ToggleAcrylicEffect(true); }
-				if (block_inputs_in_menu) { h_gui::globals::gui->renderer->SetInputInterception(true); }
+				h_gui::globals::gui->set_effects_only(true);
 				set_once = true;
 			}
 
@@ -130,13 +124,8 @@ void render_direct_post(UINT32 width, UINT32 height, LPPOINT cur_pos, const Rend
 			static float alpha = 0.04f;
 			if (curr_opac < 0.0001f)
 			{
-				show_splash = false;
-				if (!show_menu)
-				{
-					show_menu = true;
-					if (use_desktop_blur) { h_gui::globals::gui->renderer->ToggleAcrylicEffect(show_menu); }
-					if (block_inputs_in_menu) { h_gui::globals::gui->renderer->SetInputInterception(show_menu); }
-				}
+				use_splash = false;
+				h_gui::globals::gui->set_show_menu(true);
 			}
 			curr_opac = anim::lerp(curr_opac, target_opac, alpha);
 			if (curr_opac > 1.0f)
@@ -150,6 +139,7 @@ void render_direct_post(UINT32 width, UINT32 height, LPPOINT cur_pos, const Rend
 				}, curr_opac);
 		}
 	}
+
 }
 
 // Executed once per frame, after all rendering is complete
@@ -180,8 +170,6 @@ void init_once(Renderer::D2DxOverlay*& renderer, std::shared_ptr<DiInputManager>
 		// Spawn invoke thread after func map is populated
 		h_gui::globals::invoker->run();
 
-		if (use_desktop_blur) { renderer->ToggleAcrylicEffect(show_menu); }
-		if (block_inputs_in_menu) { renderer->SetInputInterception(show_menu); }
 
 		////
 		once = true;

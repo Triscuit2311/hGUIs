@@ -198,7 +198,6 @@ namespace h_gui::controls
 
 	blocks_count button::render(uint64_t tick, LPPOINT cursor_pos)
 	{
-		static D2D1_COLOR_F button_color = h_style::theme::colors::control::button;
 
 		{
 			gui_manager::renderer->DrawCustomRoundedRect(
@@ -247,10 +246,71 @@ namespace h_gui::controls
 		return 2;
 	}
 
+	micro_button::micro_button(D2D1_COLOR_F color, const std::function<void()>& action): control(), target_color(color), overlay_color(color)
+	{
+		size_ = {
+			h_style::structural::base::margin + h_style::structural::base::pad,
+			h_style::structural::base::margin + h_style::structural::base::pad,
+		};
+
+		if (action == nullptr)
+		{
+			this->action = globals::invoker->add_func([action](std::any n) { LOG("NO ACTION SET FOR BUTTON"); });
+		}
+		else
+		{
+			this->action = globals::invoker->add_func([action](std::any n) { action(); });
+		}
+	}
+
+	blocks_count micro_button::render(uint64_t tick, LPPOINT cursor_pos)
+	{
+		{
+			gui_manager::renderer->DrawCustomEllipse(
+				{ origin_.x + (size_.x / 2),origin_.y + (size_.y / 2) },
+				size_.x, size_.y, true,
+				this->target_color,
+				1,
+				h_style::theme::colors::window::border);
+
+			gui_manager::renderer->DrawCustomEllipse(
+				{ origin_.x + (size_.x / 2),origin_.y + (size_.y / 2) },
+				size_.x, size_.y, true,
+				this->overlay_color,
+				1,
+				h_style::theme::colors::window::border);
+
+		}
+
+
+		if (hovered_ && enabled_)
+		{
+			if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
+			{
+				globals::invoker->invoke(this->action, std::any{});
+				gui_manager::input->DeBounce();
+			}
+			else if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
+			{
+				overlay_color = anim::lerp_colf(overlay_color, { 1,1,1,0.35f }, 0.75f);
+			}
+			else
+			{
+				overlay_color = anim::lerp_colf(overlay_color, { 0,0,0,0.05f }, 0.05f);
+			}
+		}
+		else
+		{
+			overlay_color = anim::lerp_colf(overlay_color, { 0,0,0,0 }, 0.05f);
+		}
+
+
+		return 2;
+	}
 
 	slider_double::slider_double(double* data, double min, double max, std::wstring label,
 	                             const std::function<void(double)>& on_update) : control(),
-		data_(data), min_(min), max_(max)
+	                                                                             data_(data), min_(min), max_(max)
 	{
 		text = std::move(label);
 		size_ = {
@@ -878,8 +938,6 @@ namespace h_gui
 {
 	blocks_count controls::selection_button::render(uint64_t tick, LPPOINT cursor_pos)
 	{
-		static D2D1_COLOR_F button_color = h_style::theme::colors::control::button;
-
 		{
 			D2D1_RECT_F pos = {
 						origin_.x + h_style::structural::base::margin,
@@ -950,6 +1008,8 @@ namespace h_gui {
 		h_style::structural::control_width,
 		h_style::structural::base::block_height * (options.size() + 2)
 		};
+		this->cancel_btn_ = std::make_shared<controls::micro_button>(h_style::theme::colors::control::cancel_button_fill, [this] {this->cancel_action(); });
+
 	}
 
 	void modal_selector::bind_to_button(std::shared_ptr<controls::selection_button> ptr)
@@ -1034,8 +1094,39 @@ namespace h_gui {
 		loc = get_option_rect();
 		gui_manager::renderer->DrawLineC({ loc.left, loc.top + h_style::structural::base::pad }, { loc.right, loc.top + h_style::structural::base::pad }, 1, h_style::theme::colors::window::separator);
 
+
+		cancel_btn_->set_origin(
+			{ origin_.x + (h_style::structural::window::top_bar_height / 2) - (cancel_btn_->get_size().x / 2),
+		origin_.y + (h_style::structural::window::top_bar_height / 2) - (cancel_btn_->get_size().x / 2) });
+		if (!enabled_)
+		{
+			cancel_btn_->disable();
+		}
+		else
+		{
+			cancel_btn_->enable();
+			if (!hovered_)
+			{
+				cancel_btn_->set_hovered(false);
+			}
+			else
+			{
+				cancel_btn_->calc_hovered(cursor_pos);
+			}
+		}
+		cancel_btn_->render(tick, cursor_pos);
+		gui_manager::renderer->DrawBitmap(gui_manager::res.CANCEL_HIGHLIGHT,
+			{ origin_.x - 1, origin_.y - 1,
+				origin_.x + gui_manager::res.cancel_highlight_sz.x - 1, origin_.y + gui_manager::res.cancel_highlight_sz.y - 1 }, 0.3f);
+
 		return blocks;
 
+	}
+
+	void modal_selector::cancel_action()
+	{
+		this->modal_target_window->end_modal();
+		gui_manager::input->DeBounce();
 	}
 }
 
@@ -1090,7 +1181,6 @@ namespace h_gui {
 		*this->data = color;
 	}
 
-
 }
 
 // Color picker modal
@@ -1118,6 +1208,8 @@ namespace h_gui {
 		this->sliders_.emplace_back(std::make_shared<controls::slider_double>(&slider_bindings[3],
 			0, 1, L"Alpha: %.2f", [this](double v) {this->has_any_slider_changed = true; }));
 		this->confirm_btn_ = std::make_shared<controls::button>(L"Confirm", [this]() {this->confirm_action(); });
+
+		this->cancel_btn_ = std::make_shared<controls::micro_button>(h_style::theme::colors::control::cancel_button_fill, [this] {this->cancel_action(); });
 	}
 
 	void modal_color_picker::bind_to_control(std::shared_ptr<controls::color_picker_control> ptr)
@@ -1268,7 +1360,34 @@ namespace h_gui {
 						confirm_btn_->calc_hovered(cursor_pos);
 					}
 				}
-				blocks_ += confirm_btn_->render(tick, cursor_pos);
+				confirm_btn_->render(tick, cursor_pos);
+
+
+
+				cancel_btn_->set_origin(
+					{ origin_.x + (h_style::structural::window::top_bar_height / 2) - (cancel_btn_->get_size().x / 2),
+				origin_.y + (h_style::structural::window::top_bar_height/2) - (cancel_btn_->get_size().x/2) });
+				if (!enabled_)
+				{
+					cancel_btn_->disable();
+				}
+				else
+				{
+					cancel_btn_->enable();
+					if (!hovered_)
+					{
+						cancel_btn_->set_hovered(false);
+					}
+					else
+					{
+						cancel_btn_->calc_hovered(cursor_pos);
+					}
+				}
+				cancel_btn_->render(tick, cursor_pos);
+				gui_manager::renderer->DrawBitmap(gui_manager::res.CANCEL_HIGHLIGHT,
+					{ origin_.x - 1, origin_.y - 1,
+						origin_.x + gui_manager::res.cancel_highlight_sz.x - 1, origin_.y + gui_manager::res.cancel_highlight_sz.y - 1 }, 0.3f);
+
 			}
 				
 
@@ -1306,6 +1425,257 @@ namespace h_gui {
 
 		}
 
+
+
+
+		return 0;
+	}
+
+	void modal_color_picker::cancel_action()
+	{
+		this->modal_target_window->end_modal();
+		gui_manager::input->DeBounce();
+	}
+}
+
+
+// Hotkey picker control
+namespace h_gui
+{
+	blocks_count controls::hotkey_picker_control::render(uint64_t tick, LPPOINT cursor_pos)
+	{
+		{
+			D2D1_RECT_F pos = {
+						origin_.x + h_style::structural::base::margin,
+						origin_.y + h_style::structural::base::pad + h_style::structural::base::margin,
+						origin_.x + size_.x - h_style::structural::base::pad,
+						origin_.y + size_.y - h_style::structural::base::pad - h_style::structural::base::margin
+			};
+
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(pos,
+					h_style::theme::border_radius / 2,
+					h_style::theme::border_radius / 2), true, button_color, 1,
+				h_style::theme::colors::control::button_stroke);
+
+		}
+
+
+
+		{
+			static wchar_t buff[256];
+			if (swprintf(buff, 256, fmt.c_str(), this->text.c_str()) < 0)
+			{
+				ERR("BAD swprintf on format string (modal_selection_button)");
+			}
+			const std::wstring ws(buff);
+
+			gui_manager::renderer->DrawStringCenteredC(ws, h_style::theme::text::font_size_m, {
+												   origin_.x + (size_.x / 2),
+												   origin_.y + (size_.y / 2),
+				}, h_style::theme::colors::base::bg);
+		}
+
+		if (hovered_ && enabled_)
+		{
+			if (gui_manager::input->IsMouseButtonJustReleased(DiInputManager::vM_LEFTBTN))
+			{
+				this->modal_ptr->set_current(*data);
+				this->modal_target_window->set_modal(this->modal_ptr);
+				gui_manager::input->DeBounce();
+			}
+			else if (gui_manager::input->IsMouseButtonDown(DiInputManager::vM_LEFTBTN))
+			{
+				button_color = anim::lerp_colf(button_color, h_style::theme::colors::control::button_pressed, 0.75f);
+			}
+			else
+			{
+				button_color = anim::lerp_colf(button_color, h_style::theme::colors::control::button_hovered, 0.05f);
+			}
+		}
+		else
+		{
+			button_color = anim::lerp_colf(button_color, h_style::theme::colors::control::button, 0.05f);
+		}
+		return 2;
+	}
+
+	void controls::hotkey_picker_control::set_key(const DiInputManager::DiInput key)
+	{
+		*this->data = key;
+		this->text = gui_manager::input->GetInputName(key);
+	}
+}
+
+// Modal hotkey picker
+namespace h_gui
+{
+	void modal_hotkey_picker::confirm_action() const
+	{
+		this->control_ptr->set_key(current);
+		this->modal_target_window->end_modal();
+		gui_manager::input->DeBounce();
+	}
+
+	void modal_hotkey_picker::cancel_action() const
+	{
+		this->modal_target_window->end_modal();
+		gui_manager::input->DeBounce();
+	}
+
+	void modal_hotkey_picker::set_current(const DiInputManager::DiInput key)
+	{
+		this->current = key;
+	}
+
+	modal_hotkey_picker::modal_hotkey_picker(const std::wstring& text, std::shared_ptr<window> window) : modal_obj(window), text(text)
+	{
+		size_ = {
+			h_style::structural::control_width + (h_style::structural::space * 2),
+			(h_style::structural::base::block_height * 5) + (h_style::structural::space * 2)
+		};
+		this->confirm_btn_ = std::make_shared<controls::button>(L"Confirm", [this]() {this->confirm_action(); });
+		this->select_btn_ = std::make_shared<controls::button>(L"Select", [this]() {this->is_in_select_loop = true; });
+		this->cancel_btn_ = std::make_shared<controls::micro_button>(h_style::theme::colors::control::cancel_button_fill, [this] {this->cancel_action(); });
+	}
+
+	void modal_hotkey_picker::bind_to_control(std::shared_ptr<controls::hotkey_picker_control> ptr)
+	{
+		this->control_ptr = ptr;
+	}
+
+	blocks_count modal_hotkey_picker::render(uint64_t tick, LPPOINT cursor_pos)
+	{
+
+		D2D1_RECT_F modal_rect = {
+		origin_.x, origin_.y, origin_.x + size_.x, origin_.y + size_.y
+		};
+		// Background
+		{
+			Draw_Rounded_rect_drop_shadow(modal_rect);
+
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(modal_rect, h_style::theme::border_radius, h_style::theme::border_radius),
+				true, h_style::theme::colors::base::bg, 1, h_style::theme::colors::window::border);
+		}
+
+
+
+		// buttons
+		{
+			confirm_btn_->set_origin(
+				{
+				origin_.x + h_style::structural::space,
+				origin_.y + size_.y - h_style::structural::base::block_height - h_style::structural::space
+				});
+
+			select_btn_->set_origin(
+				{
+				origin_.x + h_style::structural::space,
+				origin_.y + size_.y - (h_style::structural::base::block_height * 2) - (h_style::structural::space * 2)
+				});
+
+			if (!enabled_ || is_in_select_loop)
+			{
+				confirm_btn_->disable();
+				select_btn_->disable();
+			}
+			else
+			{
+				confirm_btn_->enable();
+				select_btn_->enable();
+				if (!hovered_)
+				{
+					confirm_btn_->set_hovered(false);
+					select_btn_->set_hovered(false);
+				}
+				else
+				{
+					confirm_btn_->calc_hovered(cursor_pos);
+					select_btn_->calc_hovered(cursor_pos);
+				}
+			}
+			confirm_btn_->render(tick, cursor_pos);
+			select_btn_->render(tick, cursor_pos);
+
+
+			cancel_btn_->set_origin(
+				{ origin_.x + (h_style::structural::window::top_bar_height / 2) - (cancel_btn_->get_size().x / 2),
+			origin_.y + (h_style::structural::window::top_bar_height / 2) - (cancel_btn_->get_size().x / 2) });
+			if (!enabled_)
+			{
+				cancel_btn_->disable();
+			}
+			else
+			{
+				cancel_btn_->enable();
+				if (!hovered_)
+				{
+					cancel_btn_->set_hovered(false);
+				}
+				else
+				{
+					cancel_btn_->calc_hovered(cursor_pos);
+				}
+			}
+			cancel_btn_->render(tick, cursor_pos);
+			gui_manager::renderer->DrawBitmap(gui_manager::res.CANCEL_HIGHLIGHT,
+				{ origin_.x - 1, origin_.y - 1,
+					origin_.x + gui_manager::res.cancel_highlight_sz.x - 1, origin_.y + gui_manager::res.cancel_highlight_sz.y - 1 }, 0.3f);
+
+		}
+
+
+		{
+			//top bar
+			gui_manager::renderer->DrawLineC(
+				{ origin_.x, origin_.y + h_style::structural::window::top_bar_height },
+				{ origin_.x + size_.x, origin_.y + h_style::structural::window::top_bar_height },
+				2, h_style::theme::colors::window::separator);
+
+			gui_manager::renderer->DrawStringCenteredC(text,
+				h_style::theme::text::font_size_s,
+				{ origin_.x + (size_.x / 2), origin_.y + (h_style::structural::window::top_bar_height / 2) }, h_style::theme::colors::base::fg_hi);
+
+		}
+
+
+		if (is_in_select_loop)
+		{
+			gui_manager::renderer->DrawCustomRoundedRect(
+				D2D1::RoundedRect(modal_rect, h_style::theme::border_radius, h_style::theme::border_radius),
+				true, h_style::theme::colors::window::blocked_by_modal, 0, {0,0,0,0});
+
+			if (gui_manager::input->IsKeyJustPressed(DiInputManager::vKb_ESCAPE))
+			{
+				is_in_select_loop = false;
+			}else
+			{
+				if(gui_manager::input->ScanInputs(current, true, true))
+				{
+					selected_key_name = gui_manager::input->GetInputName(current);
+					is_in_select_loop = false;
+				}
+			}
+
+			selected_key_name = L"Waiting for input...";
+			gui_manager::renderer->DrawStringCenteredC(L"[Press ESC to cancel]",
+				h_style::theme::text::font_size_s,
+				{ origin_.x + (size_.x / 2),
+					origin_.y + size_.y - (h_style::structural::base::block_height * 3) - (h_style::structural::space)-h_style::structural::base::margin
+				}, h_style::theme::colors::base::fg);
+
+		}else
+		{
+			selected_key_name = gui_manager::input->GetInputName(current);
+		}
+
+
+		gui_manager::renderer->DrawStringCenteredC(L"Selected Input: " + selected_key_name,
+			h_style::theme::text::font_size_L,
+			{ origin_.x + (size_.x / 2),
+				origin_.y + size_.y - (h_style::structural::base::block_height * 3) - (h_style::structural::space * 2)
+			}, h_style::theme::colors::base::fg);
 
 
 
@@ -1394,6 +1764,11 @@ namespace h_gui
 // window
 namespace h_gui
 {
+	void window::close()
+	{
+		gui_manager::set_show_menu(false);
+	}
+
 	blocks_count h_gui::window::render(uint64_t tick, LPPOINT cursor_pos)
 	{
 		this->enabled_ = true;
@@ -1543,6 +1918,31 @@ namespace h_gui
 		}
 
 
+		close_btn_->set_origin(
+			{ origin_.x + (h_style::structural::window::top_bar_height / 2) - (close_btn_->get_size().x / 2),
+		origin_.y + (h_style::structural::window::top_bar_height / 2) - (close_btn_->get_size().x / 2) });
+		if (!enabled_)
+		{
+			close_btn_->disable();
+		}
+		else
+		{
+			close_btn_->enable();
+			if (!hovered_)
+			{
+				close_btn_->set_hovered(false);
+			}
+			else
+			{
+				close_btn_->calc_hovered(cursor_pos);
+			}
+		}
+		close_btn_->render(tick, cursor_pos);
+		gui_manager::renderer->DrawBitmap(gui_manager::res.CANCEL_HIGHLIGHT,
+			{ origin_.x - 1, origin_.y - 1,
+				origin_.x + gui_manager::res.cancel_highlight_sz.x - 1, origin_.y + gui_manager::res.cancel_highlight_sz.y - 1 }, 0.3f);
+
+
 		if (current_modal_ != nullptr)
 		{
 			{
@@ -1632,8 +2032,6 @@ namespace h_gui
 		this->current_modal_ = nullptr;
 	}
 
-
-
 }
 
 // control_group
@@ -1703,6 +2101,19 @@ namespace h_gui
 	}
 
 
+	std::shared_ptr<control> control_group::modal_hotkey(DiInputManager::DiInput* data, std::wstring button_label_fmt,
+		std::wstring modal_label, std::shared_ptr<window> modal_target)
+	{
+		std::shared_ptr<modal_hotkey_picker> s = std::make_shared<modal_hotkey_picker>(modal_label, modal_target);
+		s->set_current(*data);
+		auto btn = std::make_shared<controls::hotkey_picker_control>(data, gui_manager::input->GetInputName(*data), button_label_fmt, s, modal_target);
+		std::shared_ptr<control> c = btn;
+		s->bind_to_control(btn);
+		this->controls_.emplace_back(c);
+		this->modals.emplace_back(s);
+		return c;
+	}
+
 	blocks_count control_group::render(uint64_t tick, LPPOINT cursor_pos)
 	{
 		size_ = {
@@ -1721,7 +2132,6 @@ namespace h_gui
 			{
 				border_color = h_style::theme::colors::group::border_hovered;
 			}
-
 
 			gui_manager::renderer->DrawCustomRoundedRect(
 				D2D1::RoundedRect({
@@ -1872,6 +2282,8 @@ namespace h_gui
 {
 	bool gui_manager::render(UINT32 region_width, UINT32 region_height, uint64_t tick, LPPOINT cursor_pos)
 	{
+		if (!show_menu) { return false; }
+
 		renderer->SetSolidColor({0,0,0,0});
 		for (const auto& ws : workspaces_)
 		{
@@ -1913,6 +2325,11 @@ namespace h_gui
 		res.COLOR_PICKER_SQUARE = gui_manager::renderer->CreateBitmapImageFromFile(path / "color_picker_square.png");
 		res.COLOR_PICKER_PREVIEW_BG = gui_manager::renderer->CreateBitmapImageFromFile(path / "transparent_preview_bg.png");
 		res.COLOR_PICKER_CONTROL_PREVIEW_BG = gui_manager::renderer->CreateBitmapImageFromFile(path / "color_control_preview_backing.png");
+
+
+
+
+		res.CANCEL_HIGHLIGHT = gui_manager::renderer->CreateBitmapImageFromFile(path / "cancel_highlight.png");
 
 	}
 

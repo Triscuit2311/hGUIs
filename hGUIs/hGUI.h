@@ -6,6 +6,7 @@
 
 namespace h_gui
 {
+	class modal_hotkey_picker;
 	class modal_obj;
 	class modal_color_picker;
 	class modal_selector;
@@ -159,9 +160,20 @@ namespace h_gui
 		{
 			std::wstring text;
 			invoker_id action = 0;
-
+			D2D1_COLOR_F button_color = h_style::theme::colors::control::button;
 		public:
 			button(std::wstring label, const std::function<void()>& action = {});
+			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
+		};
+
+		class micro_button final : public control
+		{
+			invoker_id action = 0;
+			D2D1_COLOR_F overlay_color;
+			D2D1_COLOR_F target_color;
+
+		public:
+			micro_button(D2D1_COLOR_F color,const std::function<void()>& action = {});
 			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 		};
 
@@ -209,6 +221,7 @@ namespace h_gui
 			std::shared_ptr<window> modal_target_window;
 			std::wstring fmt;
 			std::wstring text;
+			D2D1_COLOR_F button_color = h_style::theme::colors::control::button;
 		public:
 			selection_button(std::wstring label, std::wstring fmt, std::shared_ptr<modal_selector> modal_ptr, const std::shared_ptr<window>& modal_target_window) : control(),
 				modal_ptr(modal_ptr), modal_target_window(modal_target_window), fmt(fmt)
@@ -243,6 +256,30 @@ namespace h_gui
 			}
 			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 			void set_color(D2D1_COLOR_F color) const;
+		};
+
+		class hotkey_picker_control final : public control
+		{
+			std::shared_ptr<modal_hotkey_picker> modal_ptr;
+			std::shared_ptr<window> modal_target_window;
+			std::wstring fmt;
+			std::wstring text;
+			DiInputManager::DiInput* data;
+			D2D1_COLOR_F button_color = h_style::theme::colors::control::button;
+		public:
+			hotkey_picker_control(DiInputManager::DiInput* data, std::wstring label, std::wstring fmt,
+				std::shared_ptr<modal_hotkey_picker> modal_ptr, const std::shared_ptr<window>& modal_target_window) : control(),
+				modal_ptr(modal_ptr), modal_target_window(modal_target_window), fmt(fmt), data(data)
+			{
+				text = std::move(label);
+				size_ = {
+					h_style::structural::control_width
+					+ (h_style::structural::base::pad * 2),
+					h_style::structural::base::block_height * 2
+				};
+			}
+			blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
+			void set_key(DiInputManager::DiInput key);
 		};
 
 	}
@@ -291,6 +328,8 @@ namespace h_gui
 			std::wstring modal_label, std::vector<std::wstring> options, std::shared_ptr<window> modal_target);
 
 		std::shared_ptr<control> modal_color(D2D1_COLOR_F* data, std::wstring label,  std::shared_ptr<window> modal_target);
+		std::shared_ptr<control> modal_hotkey(DiInputManager::DiInput* data, std::wstring button_label_fmt,
+		                                      std::wstring modal_label, std::shared_ptr<window> modal_target);
 	};
 
 	class modal_obj : public interactable, public renderable
@@ -309,10 +348,13 @@ namespace h_gui
 		std::vector<std::wstring> options;
 		std::shared_ptr<controls::selection_button> button_ptr;
 		size_t* data;
+		std::shared_ptr<controls::micro_button> cancel_btn_;
+
 	public:
 		modal_selector(size_t* data, const std::wstring& text, std::vector<std::wstring> options, std::shared_ptr<window> window);
 		void bind_to_button(std::shared_ptr<controls::selection_button> ptr);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
+		void cancel_action();
 	};
 
 	class modal_color_picker : public modal_obj
@@ -327,13 +369,32 @@ namespace h_gui
 		void confirm_action() const;
 		D2D1_POINT_2F cursor_preview_loc = { -1,-1 };
 		bool has_any_slider_changed = false;
+		std::shared_ptr<controls::micro_button> cancel_btn_;
 
 	public:
 		modal_color_picker(D2D1_COLOR_F def_color, const std::wstring& text, std::shared_ptr<window> window);
 		void bind_to_control(std::shared_ptr<controls::color_picker_control> ptr);
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
-		
-		
+		void cancel_action();
+	};
+
+	class modal_hotkey_picker : public modal_obj
+	{
+		std::wstring text;
+		std::wstring selected_key_name;
+		DiInputManager::DiInput current;
+		std::shared_ptr<controls::hotkey_picker_control> control_ptr;
+		std::shared_ptr<controls::button> confirm_btn_;
+		std::shared_ptr<controls::button> select_btn_;
+		std::shared_ptr<controls::micro_button> cancel_btn_;
+		bool is_in_select_loop = false;
+		void confirm_action() const;
+		void cancel_action() const;
+	public:
+		void set_current(DiInputManager::DiInput key);
+		modal_hotkey_picker(const std::wstring& text, std::shared_ptr<window> window);
+		void bind_to_control(std::shared_ptr<controls::hotkey_picker_control> ptr);
+		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
 	};
 
 	class tab : public interactable, public renderable
@@ -411,8 +472,11 @@ namespace h_gui
 		std::wstring title_;
 		D2D1_POINT_2F drag_anchor_ = {};
 		bool being_dragged = false;
+		std::shared_ptr<controls::micro_button> close_btn_;
+		void close();
 
 	public:
+
 		window(std::wstring title, const D2D1_POINT_2F& origin, const bool enabled = true)
 			: interactable({origin.x, origin.y}, enabled),
 			  title_(std::move(title))
@@ -420,6 +484,8 @@ namespace h_gui
 			size_ = {
 				h_style::structural::window::width, h_style::structural::window::height
 			};
+			this->close_btn_ = std::make_shared<controls::micro_button>(h_style::theme::colors::control::cancel_button_fill, [this] {this->close(); });
+
 		}
 
 		blocks_count render(uint64_t tick, LPPOINT cursor_pos) override;
@@ -464,18 +530,43 @@ namespace h_gui
 		Renderer::D2DBitmapID COLOR_PICKER_SQUARE;
 		Renderer::D2DBitmapID COLOR_PICKER_PREVIEW_BG;
 		Renderer::D2DBitmapID COLOR_PICKER_CONTROL_PREVIEW_BG;
+
+		const D2D1_POINT_2F cancel_highlight_sz = { 25, 25 };
+		Renderer::D2DBitmapID CANCEL_HIGHLIGHT;
 	};
 
 	class gui_manager
 	{
 	private:
 		std::vector<std::shared_ptr<workspace>> workspaces_{};
+		inline static bool show_menu = false;
 
 	public:
 		inline static Renderer::D2DxOverlay* renderer = nullptr;
 		inline static std::shared_ptr<DiInputManager> input = nullptr;
 		inline static loaded_resources res = {};
+		inline static bool use_input_blocking = true;
+		inline static bool use_blur_behind = true; //broken on win11
 
+		inline static void toggle_menu()
+		{
+			show_menu = !show_menu;
+			if (use_blur_behind) { h_gui::globals::gui->renderer->ToggleAcrylicEffect(h_gui::gui_manager::show_menu); }
+			if (use_input_blocking) { h_gui::globals::gui->renderer->SetInputInterception(h_gui::gui_manager::show_menu); }
+		}
+
+		inline static void set_show_menu(const bool show)
+		{
+			show_menu = show;
+			if (use_blur_behind) { h_gui::globals::gui->renderer->ToggleAcrylicEffect(h_gui::gui_manager::show_menu); }
+			if (use_input_blocking) { h_gui::globals::gui->renderer->SetInputInterception(h_gui::gui_manager::show_menu); }
+		}
+
+		inline static void set_effects_only(const bool show)
+		{
+			if (use_blur_behind) { h_gui::globals::gui->renderer->ToggleAcrylicEffect(show); }
+			if (use_input_blocking) { h_gui::globals::gui->renderer->SetInputInterception(show); }
+		}
 
 		bool render(UINT32 region_width, UINT32 region_height, uint64_t tick, LPPOINT cursor_pos);
 		std::shared_ptr<workspace> add_workspace();

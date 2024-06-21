@@ -123,7 +123,8 @@ namespace dxgi_cap
 
 					// ReSharper disable once CppFunctionResultShouldBeUsed
 					dxgi_output_duplication->ReleaseFrame();
-					Sleep(1);
+					//Sleep(1);
+
 					continue;
 				}
 				else

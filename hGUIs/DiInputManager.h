@@ -229,7 +229,11 @@ public:
 		vM_XBTN5 = 0xEE + 0x07
 	};
 
-	std::map<DiInput, std::string> DiKeyNames;
+	std::map<DiInput, std::wstring> DiKeyNames;
+	std::chrono::time_point<std::chrono::system_clock> debounce_time{};
+	unsigned long long debounce_length = 300;
+	bool in_debounce_cycle = false;
+
 
 private:
 	LPDIRECTINPUT8 m_DirectInputInstance;
@@ -247,7 +251,7 @@ private:
 
 	static bool IsStateByteSet(BYTE byte);
 	static BYTE CompMouseEnum(DiInput button);
-	std::pair<DiInputManager::DiInput, std::string> GetNextInputInternal(
+	std::pair<DiInputManager::DiInput, std::wstring> GetNextInputInternal(
 		const std::vector<DiInput>& excludes,
 		DiInput exitKey, unsigned cycleTimeout,
 		unsigned cycleLatencyMs, bool allowKeyboard,
@@ -255,7 +259,9 @@ private:
 
 public:
 	DiInputManager();
+	std::wstring GetInputName(DiInput key);
 	~DiInputManager();
+	bool ScanInputs(DiInput& out,bool allowKeyboard, bool allowMouse);
 
 	struct MouseDeltas
 	{
@@ -427,6 +433,8 @@ public:
 	 */
 	long GetScrollWheelDelta() const;
 
+	void DeBounce();
+
 	/**
 	 * Waits for the next keyboard event and returns information about it.
 	 * The function ignores any keys in the `excludes` vector.
@@ -438,7 +446,7 @@ public:
 	 *
 	 * @return A pair containing the key and a string describing the event (e.g., "A key down").
 	 */
-	std::pair<DiInput, std::string> GetNextKey(
+	std::pair<DiInput, std::wstring> GetNextKey(
 		const std::vector<DiInput>& excludes = {},
 		const DiInput exitKey = DiInput::NONE_DONTUSE,
 		const unsigned cycleTimeout = 0,
@@ -455,7 +463,7 @@ public:
 	 *
 	 * @return A pair containing the mouse button and a string describing the event (e.g., "left mouse button down").
 	 */
-	std::pair<DiInput, std::string> GetNextMouseButton(
+	std::pair<DiInput, std::wstring> GetNextMouseButton(
 		const std::vector<DiInput>& excludes = {},
 		const DiInput exitKey = DiInput::NONE_DONTUSE,
 		const unsigned cycleTimeout = 1000,
@@ -472,7 +480,7 @@ public:
 	 *
 	 * @return A pair containing the input and a string describing the event (e.g., "left mouse button down").
 	 */
-	std::pair<DiInput, std::string> GetNextInput(
+	std::pair<DiInput, std::wstring> GetNextInput(
 		const std::vector<DiInput>& excludes = {},
 		const DiInput exitKey = DiInput::NONE_DONTUSE,
 		const unsigned cycleTimeout = 1000,

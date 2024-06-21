@@ -24,6 +24,9 @@
 #include <mutex>
 #include <thread>
 #include <variant>
+#include <any>
+#include <utility>
+#include <format>
 
 
 #include <d2d1.h>
@@ -38,5 +41,7 @@
 
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
+
+#include "../shared/logging.hpp"
 
 #endif //PCH_H

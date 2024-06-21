@@ -6,6 +6,7 @@ namespace Renderer {
 
 	typedef void(*DirectOverlayCallback)(UINT32 width, UINT32 height);
 	void RunOverlayThread(DirectOverlayCallback callback);
+	void RunOverlayThread(DirectOverlayCallback callback);
 	typedef unsigned long D2DBitmapID;
 
 	/**
@@ -31,15 +32,16 @@ namespace Renderer {
 
 	private:
 
-
 		const std::wstring WindowName = L"d2win";
 		const std::wstring WindowClassName = L"d2cls";
 		const std::wstring FontName = L"Lucida Console";
-		
+
 		static D2DxOverlay* Instance; // Singleton instance
 
 		// Windows flags used for creating the overlay window
-		DWORD WindowFlags = (WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW);
+		DWORD WindowFlags = (WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_COMPOSITED);
+
+
 
 		D2D1_SIZE_U DesktopSize = {};
 
@@ -50,6 +52,7 @@ namespace Renderer {
 		// Direct2D Primary
 		ID2D1Factory* m_D2D1Factory = nullptr;
 		ID2D1HwndRenderTarget* m_D2D1RenderTarget = nullptr;
+
 
 		// Solid Brush
 		ID2D1SolidColorBrush* m_D2D1SolidColorBrush = nullptr;
@@ -105,11 +108,13 @@ namespace Renderer {
 		void PushRadialColor();
 		void PopRadialColor();
 
-
+		static HWND GetOverlayHWND();
 		static inline std::atomic_bool exit = false;
 		static HWND EnumHwnd;
 		static DirectOverlayCallback DrawLoopCallback;
 		HWND GetTargetHwndRef() const;
+		bool TargetWindowInit = false;
+
 
 		D2DxOverlay();
 
@@ -142,16 +147,7 @@ namespace Renderer {
 		 * @param thickness The thickness of the line.
 		 */
 		void DrawLine(const D2D1_POINT_2F origin, const D2D1_POINT_2F destination, const float thickness) const;
-		
-
-		/**
-		 * @brief Draws a rect with the specified dimensions
-		 *
-		 * @param rect The dimensions of the box.
-		 * @param filled If true, the box is filled with the color; otherwise, an outline of the box is drawn.
-		 * @param stroke The thickness of the outline stroke, if not filled.
-		 */
-		void DrawCustomRect(D2D1_RECT_F rect, bool filled, float stroke) const;
+		void DrawLineC(D2D1_POINT_2F origin, D2D1_POINT_2F destination, float thickness, D2D1_COLOR_F col);
 
 		/**
 		* @brief Draws a solid rect with the specified dimensions, no gradient calculations
@@ -162,14 +158,6 @@ namespace Renderer {
 		*/
 		void DrawSolidRect(D2D1_RECT_F rect, bool filled, float stroke) const;
 
-		/**
-		* @brief Draws a rounded rectangle with the specified dimensions
-		*
-		* @param rect The dimensions and corner radii of the rounded rectangle to draw.
-		* @param filled Whether the rounded rectangle should be filled or not.
-		* @param stroke The thickness of the stroke, if not filled. If 0, no stroke is drawn.
-		*/
-		void DrawCustomRoundedRect(D2D1_ROUNDED_RECT rect, bool filled, float stroke) const;
 
 		/**
 		* @brief Draws a solid rounded rectangle with the specified dimensions, no gradient calculations
@@ -202,8 +190,14 @@ namespace Renderer {
 		* @param stroke The thickness of the ellipse's outline stroke, if not filled.
 		*/
 		void DrawSolidEllipse(D2D1_POINT_2F origin, float width, float height, bool filled, float stroke) const;
+		void DrawCustomRect(D2D1_RECT_F rect, bool filled, float stroke, D2D1_COLOR_F fill_col,
+		                    D2D1_COLOR_F stroke_col);
+		void DrawCustomRoundedRect(D2D1_ROUNDED_RECT rect, bool filled = true, D2D1_COLOR_F fill_col = { 1,1,1,1 }, float stroke = 1,
+		                           D2D1_COLOR_F stroke_col = { 1,1,1,1 });
+		void DrawCustomEllipse(D2D1_POINT_2F origin, float width, float height, bool filled, D2D1_COLOR_F fill_col,
+		                       float stroke, D2D1_COLOR_F stroke_col);
 
-		void DrawBitmap(D2DBitmapID bitmapId, D2D1_RECT_F rect) const;
+		void DrawBitmap(D2DBitmapID bitmapId, D2D1_RECT_F rect, float opacity = 1.0f) const;
 		/**
 		 * @brief Draws a string of text with the specified font size, origin
 		 *
@@ -213,8 +207,15 @@ namespace Renderer {
 		 * @param origin The origin point where the text should start being drawn.
 		 */
 		void DrawString(WCHAR const* str, UINT32 strLength, const float fontSize, const D2D1_POINT_2F origin);
-		
-		
+		void DrawString(std::wstring str, float fontSize, D2D1_POINT_2F origin);
+		void DrawStringC(std::wstring str, float fontSize, D2D1_POINT_2F origin, D2D1_COLOR_F col);
+		void DrawStringCenteredC(WCHAR const* str, UINT32 strLength, float fontSize, D2D1_POINT_2F origin,
+		                         D2D1_COLOR_F col);
+		void DrawStringCenteredC(std::wstring str, float fontSize, D2D1_POINT_2F origin, D2D1_COLOR_F col);
+		void DrawStringCenteredSelectiveC(std::wstring str, float fontSize, D2D1_POINT_2F origin, D2D1_COLOR_F col,
+		                                  bool center_x = true, bool center_y = true);
+
+
 		/**
 		 * @brief Sets the brush mode to use for fill rendering.
 		 *

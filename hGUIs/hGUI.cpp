@@ -3,7 +3,6 @@
 
 #include "animations.hpp"
 #include "style.hpp"
-#include "logging.h"
 #include "WindowsUtils.h"
 
 
@@ -2325,7 +2324,6 @@ namespace h_gui
 		res.COLOR_PICKER_SQUARE = gui_manager::renderer->CreateBitmapImageFromFile(path / "color_picker_square.png");
 		res.COLOR_PICKER_PREVIEW_BG = gui_manager::renderer->CreateBitmapImageFromFile(path / "transparent_preview_bg.png");
 		res.COLOR_PICKER_CONTROL_PREVIEW_BG = gui_manager::renderer->CreateBitmapImageFromFile(path / "color_control_preview_backing.png");
-
 
 
 

@@ -28,6 +28,9 @@
     <Filter Include="PCH">
       <UniqueIdentifier>{e6e41550-2cf7-4e3b-86c3-0a825cee7adf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shared">
+      <UniqueIdentifier>{9db3b07d-027f-4381-96e0-0d850aa7a6c7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -76,6 +79,15 @@
     </ClInclude>
     <ClInclude Include="pch.h">
       <Filter>PCH</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\logging.hpp">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\shared_mem.hpp">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\model.hpp">
+      <Filter>shared</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

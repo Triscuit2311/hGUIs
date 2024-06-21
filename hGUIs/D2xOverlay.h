@@ -35,7 +35,7 @@ namespace Renderer {
 		const std::wstring WindowName = L"d2win";
 		const std::wstring WindowClassName = L"d2cls";
 		const std::wstring FontName = L"Lucida Console";
-		
+
 		static D2DxOverlay* Instance; // Singleton instance
 
 		// Windows flags used for creating the overlay window
@@ -113,6 +113,8 @@ namespace Renderer {
 		static HWND EnumHwnd;
 		static DirectOverlayCallback DrawLoopCallback;
 		HWND GetTargetHwndRef() const;
+		bool TargetWindowInit = false;
+
 
 		D2DxOverlay();
 

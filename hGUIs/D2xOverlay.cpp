@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "D2xOverlay.h"
-#include "logging.h"
 
 #include <windows.h>
 #include <dwmapi.h>
@@ -882,6 +881,8 @@ namespace Renderer
 
 			UpdateWindow(OverlayHwnd);
 
+			
+
 			// Start render
 			m_D2D1RenderTarget->BeginDraw();
 			m_D2D1RenderTarget->Clear(D2D1::ColorF(0, 0, 0, 0));
@@ -893,8 +894,6 @@ namespace Renderer
 
 			m_D2D1RenderTarget->EndDraw();
 
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
 		else
 		{
@@ -951,13 +950,16 @@ namespace Renderer
 		D2DxOverlay d2;
 
 		// Setup D2D and window resources
+		INF("HWND: 0x%X\n", D2DxOverlay::EnumHwnd);
 		d2.Initialize(D2DxOverlay::EnumHwnd);
 		INF("Dx Setup complete, starting render loop");
 
 		// Enter the rendering loop
 		while (d2.RenderLoop() && !D2DxOverlay::exit)
 		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
+
 
 
 		LOG("Dx Renderer Exited");
@@ -1092,6 +1094,7 @@ namespace Renderer
 	void D2DxOverlay::InitializeWindow(const HWND tWindow)
 	{
 		TargetHwnd = tWindow;
+		this->TargetWindowInit = true;
 
 		WNDCLASS wc = {};
 		wc.lpfnWndProc = WindowProc;

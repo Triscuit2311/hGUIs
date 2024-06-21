@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "DiInputManager.h"
 #include "InputDefines.h"
-#include "logging.h"
 
 
 bool DiInputManager::IsStateByteSet(const BYTE byte)

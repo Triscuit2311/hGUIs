@@ -131,7 +131,7 @@ private:
 };
 
 // Global logger instance
-inline ConsoleLogger global_logger;
+static inline ConsoleLogger global_logger;
 
 // Macros
 #define INIT_CONSOLE(...) (global_logger.init())

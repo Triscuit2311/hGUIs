@@ -1,4 +1,3 @@
-// dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
 
 #include <chrono>
@@ -47,7 +46,6 @@ DWORD WINAPI hThread(LPVOID lpParam)
 
         if (GetAsyncKeyState(VK_NEXT) & 0x01)
         {
-            model::g_menu_settings.visuals_to_front = !model::g_menu_settings.visuals_to_front;
             strcpy_s((char*)&model::g_menu_settings.some_str, 128, "HONKYTONKY");
         	
             menu_shm.write(&model::g_menu_settings);

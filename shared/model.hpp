@@ -7,7 +7,6 @@ namespace model {
 
 	struct menu_settings
 	{
-		bool visuals_to_front = false;
 		uint8_t some_str[128] = "";
 	} inline g_menu_settings;
 

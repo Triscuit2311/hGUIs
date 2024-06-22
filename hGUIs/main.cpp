@@ -39,36 +39,47 @@ DiInputManager::DiInput myHotkey = DiInputManager::vKb_LALT;
 size_t selection = 0;
 
 
-struct example_settings
+struct local_features
 {
-	struct _visuals
+	struct crosshair
 	{
-		bool enabled = true;
-
-		struct _esp
+		enum ch_shape : size_t
 		{
-			struct _loot
-			{
-			} loot;
+			cross,
+			square,
+			circle,
+			gapped_cross,
+			gapped_cross_bottom
+		};
+		bool enabled = false;
+		bool filled = true;
+		size_t shape = cross;
+		double width = 20.0f;
+		double height = 20.0f;
+		double thickness = 2.0f;
+		double gap = 6.0f;
 
-			struct _player
-			{
-			} player;
+		D2D1_COLOR_F color = { .4f,.8f,.4f,.8f};
 
-			struct _ai
-			{
-			} ai;
-		} esp;
+		bool use_dynamic_opacity = false;
+		double curr_dyn_opacity = 0.5f;
+		double fast_opacity = 1.0f;
+		double slow_opacity = 0.1f;
+		double move_alpha = 0.9f;
+		double settle_alpha = 0.01f;
 
-		struct _crosshair
-		{
-		} crosshair;
+		long mouse_x_delta_threshold = 20;
+		long mouse_y_delta_threshold = 10;
 
-		struct _misc
-		{
-		} misc;
-	} vis;
-} g_settings;
+		bool use_disable_key = true;
+		DiInputManager::DiInput temp_disable_hk = DiInputManager::vM_RIGHTBTN;
+		DiInputManager::DiInput toggle_disable_hk = DiInputManager::vKb_F7;
+
+
+	} g_crosshair;
+} g_local_features;
+
+
 
 
 
@@ -87,35 +98,74 @@ void setup_gui(const std::shared_ptr<h_gui::workspace>& ws)
 {
 	const auto win1 = ws->add_window(L"hGUI Prototype v0.63b", {500, 200});
 
-	const auto cat1 = win1->add_category(L"CAT1");
-	const auto aim = cat1->add_section(L"Aimbot", L"icons/target.png");
+	// const auto cat1 = win1->add_category(L"CAT1");
+	// const auto aim = cat1->add_section(L"Aimbot", L"icons/target.png");
+	//
+	// const auto aim_gen = aim->add_tab(L"General");
+	// const auto grp = aim_gen->add_group(L"Group1");
+	// grp->toggle(&model::g_client_settings.test_print, L"PRINT");
+	// grp->toggle(&b[0], L"Toggle");
+	// grp->slider_double(&f64, -10, 10, L"Slip Speed: %.2lf M/s", [](long i)
+	// {
+	// });
+	// grp->slider_long(&i32, -120, 120, L"Slide %d mph", [](long i)
+	// {
+	// });
+	// grp->modal_selection(&selection,
+	// 	L"Aim Bone: %s",
+	//                      L"Select Aim Bone",
+	// 	{L"Head", L"Neck", L"Chest", L"Pelvis", L"Wiener", L"Extremities"},
+	// 	win1);
+	// grp->modal_color(&myColor, L"My Color", win1);
+	// grp->modal_hotkey(&myHotkey, L"My Hotkey: %s", L"My Hotkey", win1);
+	//
+	//
+	// auto aim_tar = aim->add_tab(L"Target Select");
+	// auto aim_adv = aim->add_tab(L"Advanced");
+	//
+	// cat1->add_section(L"ESP", L"icons/eye_scan.png");
+	// cat1->add_section(L"Loot Filter", L"icons/crown.png");
+	// cat1->add_section(L"Radar", L"icons/radar.png");
 
-
-	const auto aim_gen = aim->add_tab(L"General");
-	const auto grp = aim_gen->add_group(L"Group1");
-	grp->toggle(&model::g_client_settings.test_print, L"PRINT");
-	grp->toggle(&b[0], L"Toggle");
-	grp->slider_double(&f64, -10, 10, L"Slip Speed: %.2lf M/s", [](long i)
-	{
-	});
-	grp->slider_long(&i32, -120, 120, L"Slide %d mph", [](long i)
-	{
-	});
-	grp->modal_selection(&selection, L"Aim Bone: %s",
-	                     L"Select Aim Bone", {L"Head", L"Neck", L"Chest", L"Pelvis", L"Wiener", L"Extremities"}, win1);
-	grp->modal_color(&myColor, L"My Color", win1);
-	grp->modal_hotkey(&myHotkey, L"My Hotkey: %s", L"My Hotkey", win1);
-
-
-	auto aim_tar = aim->add_tab(L"Target Select");
-	auto aim_adv = aim->add_tab(L"Advanced");
-
-	cat1->add_section(L"ESP", L"icons/eye_scan.png");
-	cat1->add_section(L"Loot Filter", L"icons/crown.png");
-	cat1->add_section(L"Radar", L"icons/radar.png");
 
 	auto cat2 = win1->add_category(L"CAT2");
-	cat2->add_section(L"Miscellaneous", L"icons/magic_wand.png");
+	{
+		auto misc = cat2->add_section(L"Miscellaneous", L"icons/magic_wand.png");
+		auto crosshair_tab = misc->add_tab(L"Crosshair");
+
+		auto basic = crosshair_tab->add_group(L"Basic");
+		basic->toggle(&g_local_features.g_crosshair.enabled,L"Enabled");
+		basic->modal_selection(&g_local_features.g_crosshair.shape, 
+			L"Shape: %s", L"Select Crosshair Shape", 
+			{ L"Cross", L"Square", L"Circle", L"4 Segment Cross", L"3 Segment Cross"  }, win1);
+
+		basic->slider_double(&g_local_features.g_crosshair.width, 1, 100, L"Width: %.0fpx");
+		basic->slider_double(&g_local_features.g_crosshair.height, 1, 100, L"Height: %.0fpx");
+		basic->slider_double(&g_local_features.g_crosshair.thickness, 1, 10, L"Thickness: %.0fpx");
+		basic->slider_double(&g_local_features.g_crosshair.gap, 1, 50, L"Gap: %.0fpx");
+		basic->modal_color(&g_local_features.g_crosshair.color, L"Color", win1);
+
+
+
+		auto hotkeys = crosshair_tab->add_group(L"Hotkeys");
+		hotkeys->toggle(&g_local_features.g_crosshair.use_disable_key, L"Enabled");
+		hotkeys->modal_hotkey(&g_local_features.g_crosshair.temp_disable_hk, L"Hold to disable: %s", L"Hold-to-disable Key", win1);
+		hotkeys->modal_hotkey(&g_local_features.g_crosshair.toggle_disable_hk, L"Toggle: %s", L"Toggle Crosshair Key", win1);
+
+
+		auto dyn_opacity = crosshair_tab->add_group(L"Dynamic Opacity");
+		dyn_opacity->toggle(&g_local_features.g_crosshair.use_dynamic_opacity, L"Enabled");
+		dyn_opacity->slider_double(&g_local_features.g_crosshair.fast_opacity, 0.0, 1.00, L"Moving Opacity: %.2f");
+		dyn_opacity->slider_double(&g_local_features.g_crosshair.slow_opacity, 0.0, 1.00, L"Static Opacity: %.2f");
+		dyn_opacity->slider_double(&g_local_features.g_crosshair.move_alpha, 0.0, 1.00, L"Ramp-Up Alpha: %.3f");
+		dyn_opacity->slider_double(&g_local_features.g_crosshair.settle_alpha, 0.0, 1.00, L"Settle Alpha: %.3f");
+		dyn_opacity->slider_long(&g_local_features.g_crosshair.mouse_x_delta_threshold, 1, 100, L"Horizontal Move Threshold: %dpx/tick");
+		dyn_opacity->slider_long(&g_local_features.g_crosshair.mouse_y_delta_threshold, 1, 100, L"Vertical Move Threshold: %dpx/tick");
+
+
+	}
+
+
 	cat2->add_section(L"Experimental", L"icons/test_tube.png");
 
 	auto cat3 = win1->add_category(L"CAT3");
@@ -143,8 +193,7 @@ void pre_render(std::shared_ptr<DiInputManager> inputs, Renderer::D2DxOverlay* r
 		exit_thread = true;
 	}
 
-	//if (inputs->IsInputJustReleased(DiInputManager::vKb_INSERT))
-	if(GetAsyncKeyState(VK_INSERT)&0x01)
+	if (inputs->IsInputJustReleased(DiInputManager::vKb_INSERT))
 	{
 		h_gui::gui_manager::toggle_menu();
 	}
@@ -162,12 +211,11 @@ void render_direct_pre(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::D
 	renderer->DrawStringC(s2ws((char*) & model::g_menu_settings.some_str), 18.0f, {10, 110}, {1, 1, 1, 1});
 
 
-	if (!model::g_menu_settings.visuals_to_front) {
-		shm.read(data);
-		for (const auto& item : data) {
-			renderer->DrawLineC({ item.a, item.b }, { item.c, item.d }, 2, { 1,0,0,1 });
-		}
+	shm.read(data);
+	for (const auto& item : data) {
+		renderer->DrawLineC({ item.a, item.b }, { item.c, item.d }, 2, { 1,0,0,1 });
 	}
+	
 }
 
 // Draw the main GUI and gui components, only modify if needed
@@ -178,14 +226,8 @@ void render_gui(UINT32 width, UINT32 height, LPPOINT cur_pos)
 }
 
 // Draw directly to the screen ON TOP of the main GUI
-void render_direct_post(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::D2DxOverlay* renderer)
+void render_direct_post(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::D2DxOverlay* renderer, std::shared_ptr<DiInputManager> inputs)
 {
-	if (model::g_menu_settings.visuals_to_front) {
-		shm.read(data);
-		for (const auto& item : data) {
-			renderer->DrawLineC({ item.a, item.b }, { item.c, item.d }, 2, { 1,0,0,1 });
-		}
-	}
 
 
 	// Splash Screen
@@ -220,6 +262,82 @@ void render_direct_post(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::
 			                     }, curr_opac);
 		}
 	}
+
+
+
+	{ //crosshair
+		if (inputs->IsInputJustReleased(g_local_features.g_crosshair.toggle_disable_hk))
+		{
+			g_local_features.g_crosshair.enabled = !g_local_features.g_crosshair.enabled;
+		}
+		if (g_local_features.g_crosshair.enabled && !inputs->IsInputDown(g_local_features.g_crosshair.temp_disable_hk))
+		{
+			D2D1_COLOR_F final_color = g_local_features.g_crosshair.color;
+
+			if (g_local_features.g_crosshair.use_dynamic_opacity)
+			{
+				if (abs(inputs->GetMouseDeltaX()) > g_local_features.g_crosshair.mouse_x_delta_threshold || abs(inputs->GetMouseDeltaY()) > g_local_features.g_crosshair.mouse_y_delta_threshold)
+				{
+					g_local_features.g_crosshair.curr_dyn_opacity = anim::lerp(g_local_features.g_crosshair.curr_dyn_opacity, g_local_features.g_crosshair.fast_opacity, g_local_features.g_crosshair.move_alpha);
+				}
+				else
+				{
+					g_local_features.g_crosshair.curr_dyn_opacity = anim::lerp(g_local_features.g_crosshair.curr_dyn_opacity, g_local_features.g_crosshair.slow_opacity, g_local_features.g_crosshair.settle_alpha);
+				}
+				final_color.a = g_local_features.g_crosshair.curr_dyn_opacity;
+			}
+
+			float w_off = g_local_features.g_crosshair.width / 2;
+			float h_off = g_local_features.g_crosshair.height / 2;
+			D2D1_POINT_2F center = { (float)width / 2 , (float)height / 2 };
+
+			switch (g_local_features.g_crosshair.shape)
+			{
+
+			default: // fallthrough to cross
+			case local_features::crosshair::ch_shape::cross:
+			{
+				float half_thick = g_local_features.g_crosshair.thickness / 2;
+				renderer->DrawCustomRect({ center.x - w_off,center.y - half_thick,center.x + w_off, center.y + half_thick }, true, false, final_color, {});
+				renderer->DrawCustomRect({ center.x - half_thick,center.y - h_off,center.x + half_thick, center.y + h_off }, true, false, final_color, {});
+			}break;
+			case local_features::crosshair::ch_shape::circle:
+			{
+				renderer->DrawCustomEllipse(center, g_local_features.g_crosshair.width, g_local_features.g_crosshair.height, true, final_color, 0, {});
+			}break;
+			case local_features::crosshair::ch_shape::square:
+			{
+				renderer->DrawCustomRect({ center.x - w_off,center.y - h_off,center.x + w_off,center.y + h_off }, true, 0, final_color, {});
+			}break;
+			case local_features::crosshair::ch_shape::gapped_cross:
+			{
+				float half_thick = g_local_features.g_crosshair.thickness / 2;
+				float half_gap = g_local_features.g_crosshair.gap / 2;
+
+				renderer->DrawCustomRect({ center.x - w_off,center.y - half_thick,center.x - half_gap, center.y + half_thick }, true, false, final_color, {});
+				renderer->DrawCustomRect({ center.x + half_gap,center.y - half_thick,center.x + w_off, center.y + half_thick }, true, false, final_color, {});
+
+				renderer->DrawCustomRect({ center.x - half_thick,center.y - h_off,center.x + half_thick, center.y - half_gap }, true, false, final_color, {});
+				renderer->DrawCustomRect({ center.x - half_thick,center.y + half_gap,center.x + half_thick, center.y + h_off }, true, false, final_color, {});
+
+			}break;
+			case local_features::crosshair::ch_shape::gapped_cross_bottom:
+			{
+				float half_thick = g_local_features.g_crosshair.thickness / 2;
+				float half_gap = g_local_features.g_crosshair.gap / 2;
+
+				renderer->DrawCustomRect({ center.x - w_off,center.y - half_thick,center.x - half_gap, center.y + half_thick }, true, false, final_color, {});
+				renderer->DrawCustomRect({ center.x + half_gap,center.y - half_thick,center.x + w_off, center.y + half_thick }, true, false, final_color, {});
+
+				//renderer->DrawCustomRect({ center.x - half_thick,center.y - h_off,center.x + half_thick, center.y - half_gap }, true, false, final_color, {});
+				renderer->DrawCustomRect({ center.x - half_thick,center.y + half_gap,center.x + half_thick, center.y + h_off }, true, false, final_color, {});
+
+			}break;
+			}
+		}
+	}//end crosshair
+
+
 }
 
 // Executed once per frame, after all rendering is complete
@@ -292,7 +410,7 @@ void render_tick(UINT32 width, UINT32 height)
 	pre_render(inputs, renderer);
 	render_direct_pre(width, height, cur_pos, renderer);
 	render_gui(width, height, cur_pos);
-	render_direct_post(width, height, cur_pos, renderer);
+	render_direct_post(width, height, cur_pos, renderer, inputs);
 	post_render(inputs);
 
 	inputs->RetainDeviceStates();

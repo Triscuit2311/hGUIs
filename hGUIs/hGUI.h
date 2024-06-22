@@ -319,9 +319,9 @@ namespace h_gui
 		                                const std::function<void()>& on_disabled = {});
 
 		std::shared_ptr<control> slider_double(double* data, double min, double max, std::wstring label,
-		                                       const std::function<void(double)>& on_update);
+		                                       const std::function<void(double)>& on_update = nullptr);
 		std::shared_ptr<control> slider_long(long* data, long min, long max, std::wstring label,
-		                                     const std::function<void(long)>& on_update);
+		                                     const std::function<void(long)>& on_update = nullptr);
 		std::shared_ptr<control> button(std::wstring label, const std::function<void()>& action = {});
 
 		std::shared_ptr<control> modal_selection(size_t* data, std::wstring button_label_fmt, 

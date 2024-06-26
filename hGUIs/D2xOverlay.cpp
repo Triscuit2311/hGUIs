@@ -636,6 +636,7 @@ namespace Renderer
 	{
 		ID2D1Bitmap* tBitmap = nullptr;
 
+
 		IWICBitmapDecoder* decoder = nullptr;
 		HRESULT hr = m_WicFactory->CreateDecoderFromFilename(filePath.c_str(), nullptr, GENERIC_READ,
 		                                                     WICDecodeMetadataCacheOnLoad, &decoder);
@@ -675,7 +676,95 @@ namespace Renderer
 			decoder->Release();
 		}
 
+
 		return -1;
+	}
+
+	D2DBitmapID D2DxOverlay::CreateBitmapImageFromByteArray(const uint8_t* byteArray, size_t byteArraySize)
+	{
+		ID2D1Bitmap* tBitmap = nullptr;
+		IWICStream* stream = nullptr;
+		IWICBitmapDecoder* decoder = nullptr;
+
+		// Create a stream from the byte array
+		HRESULT hr = m_WicFactory->CreateStream(&stream);
+		if (FAILED(hr))
+		{
+			ERR("Failed to create stream");
+			return -1;
+		}
+
+		hr = stream->InitializeFromMemory(const_cast<uint8_t*>(byteArray), static_cast<DWORD>(byteArraySize));
+		if (FAILED(hr))
+		{
+			ERR("Failed to initialize stream from memory");
+			stream->Release();
+			return -1;
+		}
+
+		hr = m_WicFactory->CreateDecoderFromStream(stream, nullptr, WICDecodeMetadataCacheOnLoad, &decoder);
+		if (FAILED(hr))
+		{
+			ERR("Failed to create decoder from stream");
+			stream->Release();
+			return -1;
+		}
+
+		IWICBitmapFrameDecode* frame = nullptr;
+		hr = decoder->GetFrame(0, &frame);
+		if (FAILED(hr))
+		{
+			ERR("Failed to get frame from decoder");
+			decoder->Release();
+			stream->Release();
+			return -1;
+		}
+
+		IWICFormatConverter* converter = nullptr;
+		hr = m_WicFactory->CreateFormatConverter(&converter);
+		if (FAILED(hr))
+		{
+			ERR("Failed to create format converter");
+			frame->Release();
+			decoder->Release();
+			stream->Release();
+			return -1;
+		}
+
+		hr = converter->Initialize(frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
+		if (FAILED(hr))
+		{
+			ERR("Failed to initialize format converter");
+			converter->Release();
+			frame->Release();
+			decoder->Release();
+			stream->Release();
+			return -1;
+		}
+
+		hr = m_D2D1RenderTarget->CreateBitmapFromWicBitmap(converter, nullptr, &tBitmap);
+		if (FAILED(hr))
+		{
+			ERR("Failed to create bitmap from WIC bitmap");
+			converter->Release();
+			frame->Release();
+			decoder->Release();
+			stream->Release();
+			return -1;
+		}
+
+		INF("Bitmap Creation Successful from byte array");
+		INF("Bitmap size: (%d, %d)", tBitmap->GetPixelSize().width, tBitmap->GetPixelSize().height);
+
+		this->m_BitmapLibrary.emplace_back(tBitmap);
+
+		// Release interfaces
+		converter->Release();
+		frame->Release();
+		decoder->Release();
+		stream->Release();
+
+		return static_cast<D2DBitmapID>(m_BitmapLibrary.size() - 1);
 	}
 
 

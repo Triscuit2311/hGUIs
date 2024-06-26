@@ -135,6 +135,8 @@ namespace Renderer {
 		void Initialize(HWND tWindow);
 
 		D2DBitmapID CreateBitmapImageFromFile(const std::wstring& filePath);
+		D2DBitmapID CreateBitmapImageFromByteArray(const uint8_t* byteArray, size_t byteArraySize);
+
 		void ToggleAcrylicEffect(bool enable);
 		void SetInputInterception(bool enabled);
 

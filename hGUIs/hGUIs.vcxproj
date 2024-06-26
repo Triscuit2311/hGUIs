@@ -219,6 +219,7 @@
     <ClInclude Include="hGUI.h" />
     <ClInclude Include="InputDefines.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="res\color_picker.h" />
     <ClInclude Include="style.hpp" />
     <ClInclude Include="WindowsUtils.h" />
   </ItemGroup>

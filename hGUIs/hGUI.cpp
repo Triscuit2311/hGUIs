@@ -4,6 +4,7 @@
 #include "animations.hpp"
 #include "style.hpp"
 #include "WindowsUtils.h"
+#include "res/color_picker.h"
 
 
 //helpers
@@ -2321,8 +2322,15 @@ namespace h_gui
 		res.RECT_LEFT_BORDER = gui_manager::renderer->CreateBitmapImageFromFile(path / "SHADOW_RECT" / "LEFT_BORDER.png");
 		res.RECT_BOTTOM_BORDER = gui_manager::renderer->CreateBitmapImageFromFile(path / "SHADOW_RECT" / "BOTTOM_BORDER.png");
 
-		res.COLOR_PICKER_SQUARE = gui_manager::renderer->CreateBitmapImageFromFile(path / "color_picker_square.png");
+		//res.COLOR_PICKER_SQUARE = gui_manager::renderer->CreateBitmapImageFromFile(path / "color_picker_square.png");
+
+		res.COLOR_PICKER_SQUARE = gui_manager::renderer->CreateBitmapImageFromByteArray(IMAGE_DATA, sizeof(IMAGE_DATA));
+
+		Sleep(10000);
 		res.COLOR_PICKER_PREVIEW_BG = gui_manager::renderer->CreateBitmapImageFromFile(path / "transparent_preview_bg.png");
+
+
+
 		res.COLOR_PICKER_CONTROL_PREVIEW_BG = gui_manager::renderer->CreateBitmapImageFromFile(path / "color_control_preview_backing.png");
 
 

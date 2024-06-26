@@ -31,6 +31,9 @@
     <Filter Include="shared">
       <UniqueIdentifier>{9db3b07d-027f-4381-96e0-0d850aa7a6c7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="res">
+      <UniqueIdentifier>{0f9c238f-2a7f-44f8-986c-23f1c85711a7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -88,6 +91,9 @@
     </ClInclude>
     <ClInclude Include="..\shared\model.hpp">
       <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="res\color_picker.h">
+      <Filter>res</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

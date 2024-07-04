@@ -188,7 +188,7 @@ namespace h_gui::controls
 
 		if (action == nullptr)
 		{
-			this->action = globals::invoker->add_func([action](std::any n) { LOG("NO ACTION SET FOR BUTTON"); });
+			this->action = globals::invoker->add_func([action](std::any n) { LOG(L"NO ACTION SET FOR BUTTON"); });
 		}
 		else
 		{
@@ -255,7 +255,7 @@ namespace h_gui::controls
 
 		if (action == nullptr)
 		{
-			this->action = globals::invoker->add_func([action](std::any n) { LOG("NO ACTION SET FOR BUTTON"); });
+			this->action = globals::invoker->add_func([action](std::any n) { LOG(L"NO ACTION SET FOR BUTTON"); });
 		}
 		else
 		{
@@ -325,7 +325,7 @@ namespace h_gui::controls
 			{
 				if (!n.has_value())
 				{
-					ERR("No value on std::any");
+					ERR(L"No value on std::any");
 					return;
 				}
 				try
@@ -335,7 +335,7 @@ namespace h_gui::controls
 				}
 				catch (const std::bad_any_cast& e)
 				{
-					ERR("Bad std::any_cast! : %s", e.what());
+					ERR(L"Bad std::any_cast! : %s", e.what());
 				}
 			});
 		}
@@ -347,7 +347,7 @@ namespace h_gui::controls
 			static wchar_t buff[256];
 			if (swprintf(buff, 256, text.c_str(), *this->data_) < 0)
 			{
-				ERR("BAD swprintf on format string (slider_double)");
+				ERR(L"BAD swprintf on format string (slider_double)");
 			}
 			const std::wstring ws(buff);
 			gui_manager::renderer->DrawStringC(ws,
@@ -440,7 +440,7 @@ namespace h_gui::controls
 			{
 				if (!n.has_value())
 				{
-					ERR("No value on std::any");
+					ERR(L"No value on std::any");
 					return;
 				}
 				try
@@ -450,7 +450,7 @@ namespace h_gui::controls
 				}
 				catch (const std::bad_any_cast& e)
 				{
-					ERR("Bad std::any_cast! : %s", e.what());
+					ERR(L"Bad std::any_cast! : %s", e.what());
 				}
 			});
 		}
@@ -462,7 +462,7 @@ namespace h_gui::controls
 			static wchar_t buff[256];
 			if (swprintf(buff, 256, text.c_str(), *this->data_) < 0)
 			{
-				ERR("BAD swprintf on format string (slider_long)");
+				ERR(L"BAD swprintf on format string (slider_long)");
 			}
 			const std::wstring ws(buff);
 			gui_manager::renderer->DrawStringC(ws,
@@ -960,7 +960,7 @@ namespace h_gui
 			static wchar_t buff[256];
 			if (swprintf(buff, 256, fmt.c_str(), this->text.c_str()) < 0)
 			{
-				ERR("BAD swprintf on format string (modal_selection_button)");
+				ERR(L"BAD swprintf on format string (modal_selection_button)");
 			}
 			const std::wstring ws(buff);
 
@@ -1466,7 +1466,7 @@ namespace h_gui
 			static wchar_t buff[256];
 			if (swprintf(buff, 256, fmt.c_str(), this->text.c_str()) < 0)
 			{
-				ERR("BAD swprintf on format string (modal_selection_button)");
+				ERR(L"BAD swprintf on format string (modal_selection_button)");
 			}
 			const std::wstring ws(buff);
 
@@ -2326,7 +2326,7 @@ namespace h_gui
 
 		res.COLOR_PICKER_SQUARE = gui_manager::renderer->CreateBitmapImageFromByteArray(IMAGE_DATA, sizeof(IMAGE_DATA));
 
-		Sleep(10000);
+
 		res.COLOR_PICKER_PREVIEW_BG = gui_manager::renderer->CreateBitmapImageFromFile(path / "transparent_preview_bg.png");
 
 
@@ -2397,7 +2397,7 @@ namespace h_gui
 			{
 				if (!func_map_.contains(thread_local_invoke_queue_.front().first))
 				{
-					ERR("NON-FATAL bad func ID [%d]", thread_local_invoke_queue_.front().first);
+					ERR(L"NON-FATAL bad func ID [%d]", thread_local_invoke_queue_.front().first);
 					thread_local_invoke_queue_.pop_front();
 					continue;
 				}
@@ -2427,7 +2427,7 @@ namespace h_gui
 		if (thread_spawned_)
 		{
 			ERR(
-				"Cannot add functions to async invoker once thread has been spawned. Adding safe placeholder for func id: [%d]",
+				L"Cannot add functions to async invoker once thread has been spawned. Adding safe placeholder for func id: [%d]",
 				s_id_);
 			func_map_.try_emplace(s_id_, [](std::any i)
 			{

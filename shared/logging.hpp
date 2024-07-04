@@ -2,11 +2,9 @@
 #include <windows.h>
 #include <cstdio>
 #include <sstream>
-
+#include <string>
 
 #define USE_CONSOLE true
-
-
 
 class ConsoleLogger {
 public:
@@ -18,57 +16,54 @@ public:
     {
         if constexpr (USE_CONSOLE) {
             AllocConsole();
-            freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
-            //system("chcp 437");
+            freopen_s((FILE**)stdout, "CONOUT$", "w, ccs=UNICODE", stdout);
             console_use_ansi = enable_virtual_terminal_processing();
             CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
             GetConsoleScreenBufferInfo(console_hdl, &consoleInfo);
             console_saved_attrs = consoleInfo.wAttributes;
-            system("MODE CON COLS=50 LINES=10");
-            logSpecial("Console Allocated");
+            logSpecial(L"Console Allocated");
         }
     }
 
     ~ConsoleLogger() {
         if constexpr (USE_CONSOLE) {
-            logSpecial("Console Freed");
+            logSpecial(L"Console Freed");
             FreeConsole();
         }
     }
 
     void free() {
         if constexpr (USE_CONSOLE) {
-            logSpecial("Console Freed");
+            logSpecial(L"Console Freed");
             FreeConsole();
         }
     }
 
-
     template<typename... Args>
-    void log(const char* format, Args... args) {
-        log_with_color("+", FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY, format, args...);
+    void log(const wchar_t* format, Args... args) {
+        log_with_color(L"+", FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY, format, args...);
     }
 
     template<typename... Args>
-    void info(const char* format, Args... args) {
-        log_with_color("i", FOREGROUND_GREEN | FOREGROUND_INTENSITY, format, args...);
+    void info(const wchar_t* format, Args... args) {
+        log_with_color(L"i", FOREGROUND_GREEN | FOREGROUND_INTENSITY, format, args...);
     }
 
     template<typename... Args>
-    void error(const char* format, Args... args) {
-        log_with_color("x", FOREGROUND_RED | FOREGROUND_INTENSITY, format, args...);
+    void error(const wchar_t* format, Args... args) {
+        log_with_color(L"x", FOREGROUND_RED | FOREGROUND_INTENSITY, format, args...);
     }
 
     template<typename... Args>
-    void logSpecial(const char* format, Args... args) {
-        log_with_color("~", FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY, format, args...);
+    void logSpecial(const wchar_t* format, Args... args) {
+        log_with_color(L"~", FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY, format, args...);
     }
 
     template<typename T, typename... Args>
-    void logNull(T* ptr, const char* format, Args... args) {
-        std::ostringstream messageStream;
-        messageStream << (ptr == nullptr ? "NULLPTR: " : "VALID PTR: ") << format;
-        std::string message = messageStream.str();
+    void logNull(T* ptr, const wchar_t* format, Args... args) {
+        std::wostringstream messageStream;
+        messageStream << (ptr == nullptr ? L"NULLPTR: " : L"VALID PTR: ") << format;
+        std::wstring message = messageStream.str();
 
         if (ptr == nullptr) {
             error(message.c_str(), args...);
@@ -94,44 +89,44 @@ private:
     }
 
     template<typename... Args>
-    void log_with_color(const char* prefix, WORD color, const char* format, Args... args) {
+    void log_with_color(const wchar_t* prefix, WORD color, const wchar_t* format, Args... args) {
         if (console_use_ansi) {
-            const char* colorCode = get_color_code(color);
-            printf("%s %s %c ", colorCode, prefix, 16);
-            printf("\x1B[0m");
-            printf(format, args...);
-            printf("\n");
+            const wchar_t* colorCode = get_color_code(color);
+            wprintf(L"%s %s %c ", colorCode, prefix, 16);
+            wprintf(L"\x1B[0m");
+            wprintf(format, args...);
+            wprintf(L"\n");
 
         }
         else {
             SetConsoleTextAttribute(console_hdl, color);
-            printf("%s ", prefix);
+            wprintf(L"%s ", prefix);
             SetConsoleTextAttribute(console_hdl, console_saved_attrs);
-            printf(format, args...);
-            printf("\n");
+            wprintf(format, args...);
+            wprintf(L"\n");
         }
     }
 
-    static const char* get_color_code(WORD color) {
+    static const wchar_t* get_color_code(WORD color) {
         // Mapping Windows console colors to ANSI escape codes
         switch (color) {
         case FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY:
-            return "\x1B[1;93m"; // Yellow
+            return L"\x1B[1;93m"; // Yellow
         case FOREGROUND_GREEN | FOREGROUND_INTENSITY:
-            return "\x1B[1;92m"; // Bright Green
+            return L"\x1B[1;92m"; // Bright Green
         case FOREGROUND_RED | FOREGROUND_INTENSITY:
-            return "\x1B[1;91m"; // Bright Red
+            return L"\x1B[1;91m"; // Bright Red
         case FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY:
-            return "\x1B[1;96m"; // Bright Cyan
+            return L"\x1B[1;96m"; // Bright Cyan
         default:
-            return "\x1B[0;37m"; // Default (White)
+            return L"\x1B[0;37m"; // Default (White)
         }
     }
 
 };
 
 // Global logger instance
-static inline ConsoleLogger global_logger;
+inline ConsoleLogger global_logger;
 
 // Macros
 #define INIT_CONSOLE(...) (global_logger.init())
@@ -142,7 +137,7 @@ static inline ConsoleLogger global_logger;
 #define EXIT_CONSOLE(...) global_logger.free()
 #define LOGNULL(ptr, ...) global_logger.logNull(ptr, __VA_ARGS__)
 
-#define VARLOG_F(var) LOG("%s: %.8f", #var, var)
-#define VARLOG_D(var) LOG("%s: %d", #var, var)
-#define VARLOG_FVEC(var)LOG("%s: [%.8f, %.8f, %.8f]", #var, var.X, var.Y, var.Z)
-#define VARLOG_FROT(var) LOG("%s: [%.8f, %.8f, %.8f]", #var, var.Yaw, var.Pitch, var.Roll)
+#define VARLOG_F(var) LOG(L"%s: %.8f", L#var, var)
+#define VARLOG_D(var) LOG(L"%s: %d", L#var, var)
+#define VARLOG_FVEC(var)LOG(L"%s: [%.8f, %.8f, %.8f]", L#var, var.X, var.Y, var.Z)
+#define VARLOG_FROT(var) LOG(L"%s: [%.8f, %.8f, %.8f]", L#var, var.Yaw, var.Pitch, var.Roll)

@@ -87,7 +87,7 @@ namespace Renderer
 	{
 		if (bitmapId < 0 || bitmapId >= m_BitmapLibrary.size())
 		{
-			ERR("Bad Bitmap ID: %lu", bitmapId);
+			ERR(L"Bad Bitmap ID: %lu", bitmapId);
 			return;
 		}
 		m_D2D1RenderTarget->DrawBitmap(m_BitmapLibrary.at(bitmapId), rect, opacity);
@@ -479,7 +479,7 @@ namespace Renderer
 			m_FillBrush = m_D2D1RadialGradientBrush;
 			break;
 		default:
-			ERR("Bad brush mode passed to SetFillBrushMode(...)");
+			ERR(L"Bad brush mode passed to SetFillBrushMode(...)");
 			return;
 		}
 
@@ -500,7 +500,7 @@ namespace Renderer
 			m_StrokeBrush = m_D2D1RadialGradientBrush;
 			break;
 		default:
-			ERR("Bad brush mode passed to SetStrokeBrushMode(...)");
+			ERR(L"Bad brush mode passed to SetStrokeBrushMode(...)");
 			return;
 		}
 		StrokeBrushMode = mode;
@@ -526,7 +526,7 @@ namespace Renderer
 		                                                L"en-us", &m_WriteTextFormat);
 		if (res != S_OK)
 		{
-			ERR("Tried to load invalid font in LoadSystemFontAsDefault(...)");
+			ERR(L"Tried to load invalid font in LoadSystemFontAsDefault(...)");
 		}
 	}
 
@@ -625,7 +625,7 @@ namespace Renderer
 		SetRenderTargetSize();
 
 
-		SPE("BITMAP CREATION STARTING");
+		SPE(L"BITMAP CREATION STARTING");
 
 		CoCreateInstance(
 			CLSID_WICImagingFactory, nullptr,
@@ -658,15 +658,15 @@ namespace Renderer
 							converter, nullptr, &tBitmap);
 						if (SUCCEEDED(hr))
 						{
-							INF("Bitmap Creation Successful: %ws", filePath.c_str());
-							INF("Bitmap size: (%d, %d)", tBitmap->GetPixelSize().width, tBitmap->GetPixelSize().height);
+							INF(L"Bitmap Creation Successful: %ws", filePath.c_str());
+							INF(L"Bitmap size: (%d, %d)", tBitmap->GetPixelSize().width, tBitmap->GetPixelSize().height);
 
 							this->m_BitmapLibrary.emplace_back(tBitmap);
 							return static_cast<D2DBitmapID>(m_BitmapLibrary.size() - 1);
 						}
 						else
 						{
-							ERR("Bitmap Creation failed for: %ws", filePath.c_str());
+							ERR(L"Bitmap Creation failed for: %ws", filePath.c_str());
 						}
 					}
 					converter->Release();
@@ -690,14 +690,14 @@ namespace Renderer
 		HRESULT hr = m_WicFactory->CreateStream(&stream);
 		if (FAILED(hr))
 		{
-			ERR("Failed to create stream");
+			ERR(L"Failed to create stream");
 			return -1;
 		}
 
 		hr = stream->InitializeFromMemory(const_cast<uint8_t*>(byteArray), static_cast<DWORD>(byteArraySize));
 		if (FAILED(hr))
 		{
-			ERR("Failed to initialize stream from memory");
+			ERR(L"Failed to initialize stream from memory");
 			stream->Release();
 			return -1;
 		}
@@ -705,7 +705,7 @@ namespace Renderer
 		hr = m_WicFactory->CreateDecoderFromStream(stream, nullptr, WICDecodeMetadataCacheOnLoad, &decoder);
 		if (FAILED(hr))
 		{
-			ERR("Failed to create decoder from stream");
+			ERR(L"Failed to create decoder from stream");
 			stream->Release();
 			return -1;
 		}
@@ -714,7 +714,7 @@ namespace Renderer
 		hr = decoder->GetFrame(0, &frame);
 		if (FAILED(hr))
 		{
-			ERR("Failed to get frame from decoder");
+			ERR(L"Failed to get frame from decoder");
 			decoder->Release();
 			stream->Release();
 			return -1;
@@ -724,7 +724,7 @@ namespace Renderer
 		hr = m_WicFactory->CreateFormatConverter(&converter);
 		if (FAILED(hr))
 		{
-			ERR("Failed to create format converter");
+			ERR(L"Failed to create format converter");
 			frame->Release();
 			decoder->Release();
 			stream->Release();
@@ -734,7 +734,7 @@ namespace Renderer
 		hr = converter->Initialize(frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
 		if (FAILED(hr))
 		{
-			ERR("Failed to initialize format converter");
+			ERR(L"Failed to initialize format converter");
 			converter->Release();
 			frame->Release();
 			decoder->Release();
@@ -745,7 +745,7 @@ namespace Renderer
 		hr = m_D2D1RenderTarget->CreateBitmapFromWicBitmap(converter, nullptr, &tBitmap);
 		if (FAILED(hr))
 		{
-			ERR("Failed to create bitmap from WIC bitmap");
+			ERR(L"Failed to create bitmap from WIC bitmap");
 			converter->Release();
 			frame->Release();
 			decoder->Release();
@@ -753,8 +753,8 @@ namespace Renderer
 			return -1;
 		}
 
-		INF("Bitmap Creation Successful from byte array");
-		INF("Bitmap size: (%d, %d)", tBitmap->GetPixelSize().width, tBitmap->GetPixelSize().height);
+		INF(L"Bitmap Creation Successful from byte array");
+		INF(L"Bitmap size: (%d, %d)", tBitmap->GetPixelSize().width, tBitmap->GetPixelSize().height);
 
 		this->m_BitmapLibrary.emplace_back(tBitmap);
 
@@ -881,7 +881,7 @@ namespace Renderer
 	{
 		if (m_SolidColorQueue.empty())
 		{
-			ERR("Tried to pop from empty solid color queue");
+			ERR(L"Tried to pop from empty solid color queue");
 			return;
 		}
 
@@ -898,7 +898,7 @@ namespace Renderer
 	{
 		if (m_LinearColorQueue.empty())
 		{
-			ERR("Tried to pop from empty linear color queue");
+			ERR(L"Tried to pop from empty linear color queue");
 			return;
 		}
 		this->m_LinearGradientStops[0].color = m_LinearColorQueue.front().first;
@@ -915,7 +915,7 @@ namespace Renderer
 	{
 		if (m_RadialColorQueue.empty())
 		{
-			ERR("Tried to pop from empty radial color queue");
+			ERR(L"Tried to pop from empty radial color queue");
 			return;
 		}
 		this->m_RadialGradientStops[0].color = m_RadialColorQueue.front().first;
@@ -1024,24 +1024,24 @@ namespace Renderer
 	DWORD WINAPI OverlayThread(LPVOID lpParam)
 	{
 		INIT_CONSOLE();
-		SPE("Overlay Thread Started");
-		LOG("Move to Enum Windows");
+		SPE(L"Overlay Thread Started");
+		LOG(L"Move to Enum Windows");
 
 		// Enumerates all top-level windows on the screen 
 		// .. passes each window handle to the callback function EnumWindowsProc
 		EnumWindows(EnumWindowsProc, NULL);
 
-		INF("Enum Windows Complete");
+		INF(L"Enum Windows Complete");
 
-		LOG("Moving to Dx Setup");
+		LOG(L"Moving to Dx Setup");
 
 		// Create the (singleton) instance of the D2DxOverlay
 		D2DxOverlay d2;
 
 		// Setup D2D and window resources
-		INF("HWND: 0x%X\n", D2DxOverlay::EnumHwnd);
+		INF(L"HWND: 0x%X\n", D2DxOverlay::EnumHwnd);
 		d2.Initialize(D2DxOverlay::EnumHwnd);
-		INF("Dx Setup complete, starting render loop");
+		INF(L"Dx Setup complete, starting render loop");
 
 		// Enter the rendering loop
 		while (d2.RenderLoop() && !D2DxOverlay::exit)
@@ -1051,9 +1051,9 @@ namespace Renderer
 
 
 
-		LOG("Dx Renderer Exited");
+		LOG(L"Dx Renderer Exited");
 
-		INF("Freeing Console.");
+		INF(L"Freeing Console.");
 
 		// Clean up console resources and exit the thread
 		EXIT_CONSOLE();
@@ -1197,6 +1197,7 @@ namespace Renderer
 		OverlayHwnd = CreateWindowEx(
 			WindowFlags,
 			wc.lpszClassName, WindowName.c_str(),
+
 
 			//TODO: POPUPWINDOW HAS BORDER
 			//.. BUT POPUP FLICKERS

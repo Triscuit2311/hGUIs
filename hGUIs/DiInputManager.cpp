@@ -246,14 +246,14 @@ void DiInputManager::UpdateDeviceStates()
 		&m_CurrentKeyboardState);
 
 	if (FAILED(result))
-		ERR("Failed to get Keyboard state");
+		ERR(L"Failed to get Keyboard state");
 
 	result = m_DiMouseDevice->GetDeviceState(
 		sizeof(m_CurrentMouseState),
 		&m_CurrentMouseState);
 
 	if (FAILED(result))
-		ERR("Failed to get Mouse state");
+		ERR(L"Failed to get Mouse state");
 }
 
 void DiInputManager::RetainDeviceStates()
@@ -481,7 +481,7 @@ std::pair<DiInputManager::DiInput, std::wstring> DiInputManager::GetNextInputInt
 
 		if (cycleTimeout > 0 && cycleTimeout < cycles)
 		{
-			INF("Breaking getinput early.");
+			INF(L"Breaking getinput early.");
 			break;
 		}
 

@@ -7,7 +7,7 @@ using namespace std;
 bool IsCorrectTargetArchitecture(HANDLE hProc) {
 	BOOL bTarget = FALSE;
 	if (!IsWow64Process(hProc, &bTarget)) {
-		ERR("Can't confirm target process architecture: 0x%X\n", GetLastError());
+		ERR(L"Can't confirm target process architecture: 0x%X\n", GetLastError());
 		return false;
 	}
 
@@ -53,12 +53,12 @@ int wmain(int argc, wchar_t** argv) {
 	DWORD PID = GetProcessIdByName(processName);
 
 	if (PID == 0) {
-		ERR("Process not found\n");
+		ERR(L"Process not found\n");
 		system("pause");
 		return -1;
 	}
 
-	INF("Process pid: %d\n", PID);
+	INF(L"Process pid: %d\n", PID);
 
 	TOKEN_PRIVILEGES priv = { 0 };
 	HANDLE hToken = NULL;
@@ -75,20 +75,20 @@ int wmain(int argc, wchar_t** argv) {
 	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PID);
 	if (!hProc) {
 		DWORD Err = GetLastError();
-		ERR("OpenProcess failed: 0x%X\n", Err);
+		ERR(L"OpenProcess failed: 0x%X\n", Err);
 		system("PAUSE");
 		return -2;
 	}
 
 	if (!IsCorrectTargetArchitecture(hProc)) {
-		ERR("Invalid Process Architecture.\n");
+		ERR(L"Invalid Process Architecture.\n");
 		CloseHandle(hProc);
 		system("PAUSE");
 		return -3;
 	}
 
 	if (GetFileAttributes(dllPath) == INVALID_FILE_ATTRIBUTES) {
-		ERR("Dll file doesn't exist\n");
+		ERR(L"Dll file doesn't exist\n");
 		CloseHandle(hProc);
 		system("PAUSE");
 		return -4;
@@ -97,7 +97,7 @@ int wmain(int argc, wchar_t** argv) {
 	std::ifstream File(dllPath, std::ios::binary | std::ios::ate);
 
 	if (File.fail()) {
-		ERR("Opening the file failed: %X\n", (DWORD)File.rdstate());
+		ERR(L"Opening the file failed: %X\n", (DWORD)File.rdstate());
 		File.close();
 		CloseHandle(hProc);
 		system("PAUSE");
@@ -106,7 +106,7 @@ int wmain(int argc, wchar_t** argv) {
 
 	auto FileSize = File.tellg();
 	if (FileSize < 0x1000) {
-		ERR("Filesize invalid.\n");
+		ERR(L"Filesize invalid.\n");
 		File.close();
 		CloseHandle(hProc);
 		system("PAUSE");
@@ -115,7 +115,7 @@ int wmain(int argc, wchar_t** argv) {
 
 	BYTE* pSrcData = new BYTE[(UINT_PTR)FileSize];
 	if (!pSrcData) {
-		ERR("Can't allocate dll file.\n");
+		ERR(L"Can't allocate dll file.\n");
 		File.close();
 		CloseHandle(hProc);
 		system("PAUSE");
@@ -126,17 +126,17 @@ int wmain(int argc, wchar_t** argv) {
 	File.read((char*)(pSrcData), FileSize);
 	File.close();
 
-	SPE("Mapping...\n");
+	SPE(L"Mapping...\n");
 	if (!ManualMapDll(hProc, pSrcData, FileSize)) {
 		delete[] pSrcData;
 		CloseHandle(hProc);
-		ERR("Error while mapping.\n");
+		ERR(L"Error while mapping.\n");
 		system("PAUSE");
 		return -8;
 	}
 	delete[] pSrcData;
 
 	CloseHandle(hProc);
-	INF("OK\n");
+	INF(L"OK\n");
 	return 0;
 }

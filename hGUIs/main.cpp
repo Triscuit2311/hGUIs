@@ -10,34 +10,28 @@
 
 #include "../shared/model.hpp"
 
+model::humanoid g_enemy_array[model::ENEMY_ARRAY_SIZE];
+shared_memory_array<model::humanoid, model::ENEMY_ARRAY_SIZE> g_enemy_shm(L"ENEMY_SHM");
 
-
-
-std::vector<model::foo> data(10);
-
-shared_memory_vec<model::foo> shm(L"SharedMemory", 10);
 shared_memory_single<model::menu_settings> menu_shm(L"SHM_MENU_SETTINGS");
 shared_memory_single<model::client_settings> client_shm(L"SHM_CLIENT_SETTINGS");
 
 Renderer::D2DBitmapID splash_img;
 
-bool b[20] = {false};
-double dub = 99.0;
-long i32 = 13;
-double f64 = 9.0;
-
-long i32b = 1000;
-double f64a = 99999.0;
-
-
 bool use_splash = false;
 bool exit_thread = false;
 
-D2D1_COLOR_F myColor = {0.7f, 0.2f, 0.8f, 0.65f};
-DiInputManager::DiInput myHotkey = DiInputManager::vKb_LALT;
 
-size_t selection = 0;
 
+
+float scale_on_dist(float distance, float min_dist, float max_dist, float min_scale, float max_scale) {
+	if (distance < min_dist) { return max_scale; }
+	if (distance > max_dist) { return min_scale; }
+
+	distance = std::clamp(distance, min_dist, max_dist);
+	float scale = min_scale + (distance - min_dist) * (max_scale - min_scale) / (max_dist - min_dist);
+	return max_scale - scale;
+}
 
 struct local_features
 {
@@ -98,12 +92,12 @@ void setup_gui(const std::shared_ptr<h_gui::workspace>& ws)
 {
 	const auto win1 = ws->add_window(L"hGUI Prototype v0.63b", {500, 200});
 
-	// const auto cat1 = win1->add_category(L"CAT1");
-	// const auto aim = cat1->add_section(L"Aimbot", L"icons/target.png");
-	//
-	// const auto aim_gen = aim->add_tab(L"General");
-	// const auto grp = aim_gen->add_group(L"Group1");
-	// grp->toggle(&model::g_client_settings.test_print, L"PRINT");
+	const auto cat1 = win1->add_category(L"CAT1");
+	const auto aim = cat1->add_section(L"Aimbot", L"icons/target.png");
+	
+	const auto aim_gen = aim->add_tab(L"General");
+	const auto grp = aim_gen->add_group(L"Group1");
+
 	// grp->toggle(&b[0], L"Toggle");
 	// grp->slider_double(&f64, -10, 10, L"Slip Speed: %.2lf M/s", [](long i)
 	// {
@@ -162,7 +156,6 @@ void setup_gui(const std::shared_ptr<h_gui::workspace>& ws)
 		dyn_opacity->slider_long(&g_local_features.g_crosshair.mouse_x_delta_threshold, 1, 100, L"Horizontal Move Threshold: %dpx/tick");
 		dyn_opacity->slider_long(&g_local_features.g_crosshair.mouse_y_delta_threshold, 1, 100, L"Vertical Move Threshold: %dpx/tick");
 
-
 	}
 
 
@@ -187,7 +180,7 @@ void load_resources(Renderer::D2DxOverlay* renderer)
 // Executed once per frame, before any rendering
 void pre_render(std::shared_ptr<DiInputManager> inputs, Renderer::D2DxOverlay* renderer)
 {
-	if (inputs->IsInputJustReleased(DiInputManager::vKb_END))
+	if (inputs->IsInputJustReleased(DiInputManager::vKb_F12))
 	{
 		Renderer::D2DxOverlay::exit = true;
 		exit_thread = true;
@@ -211,9 +204,82 @@ void render_direct_pre(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::D
 	renderer->DrawStringC(s2ws((char*) & model::g_menu_settings.some_str), 18.0f, {10, 110}, {1, 1, 1, 1});
 
 
-	shm.read(data);
-	for (const auto& item : data) {
-		renderer->DrawLineC({ item.a, item.b }, { item.c, item.d }, 2, { 1,0,0,1 });
+
+	g_enemy_shm.read(g_enemy_array);
+	for (const auto& ent : g_enemy_array) {
+		if (ent.stale) { break; }
+		//LOG(L".");
+		if (ent.x < 0 || ent.x > width || ent.y < 0 || ent.y > height) { continue; }
+
+		D2D1_COLOR_F ent_col = ent.team == 0 ? D2D1_COLOR_F{ 0, 1, 0, 1 } : ent.team == 1 ? D2D1_COLOR_F{ 0, 0, 1, 1 } : D2D1_COLOR_F{ 1, 0, 0, 1 };
+
+
+
+
+
+		try
+		{
+			renderer->DrawLineC(ent.bones[model::humanoid::bone::head], ent.bones[model::humanoid::bone::neck], 1, ent_col); // Neck
+			{
+				// Arms
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::neck], ent.bones[model::humanoid::bone::l_shoulder], 1, ent_col); // Left Upper Arm
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::neck], ent.bones[model::humanoid::bone::r_shoulder], 1, ent_col); // Right Upper Arm
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_shoulder], ent.bones[model::humanoid::bone::l_elbow], 1, ent_col); // Left Upper Arm
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_shoulder], ent.bones[model::humanoid::bone::r_elbow], 1, ent_col); // Right Upper Arm
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_elbow], ent.bones[model::humanoid::bone::l_hand], 1, ent_col);; // Left Lower Arm
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_elbow], ent.bones[model::humanoid::bone::r_hand], 1, ent_col); // Right Lower Arm
+			}
+			{
+				// Body
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::neck], ent.bones[model::humanoid::bone::chest], 1, ent_col); // Upper Chest
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::chest], ent.bones[model::humanoid::bone::pelvis], 1, ent_col); // Torso
+			}
+			{
+				// Legs
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::pelvis], ent.bones[model::humanoid::bone::l_hip], 1, ent_col); // Left Upper Leg
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::pelvis], ent.bones[model::humanoid::bone::r_hip], 1, ent_col); // Right Upper Leg
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_hip], ent.bones[model::humanoid::bone::l_knee], 1, ent_col); // Left Upper Leg
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_hip], ent.bones[model::humanoid::bone::r_knee], 1, ent_col); // Right Upper Leg
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_knee], ent.bones[model::humanoid::bone::l_foot], 1, ent_col); // Left Lower Leg
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_knee], ent.bones[model::humanoid::bone::r_foot], 1, ent_col); // Right Lower Leg
+			}
+
+
+			// smaller when further away, larger when closer
+			float head_diameter = scale_on_dist(ent.distance, 2.0f, 40.0f, 1.0f, 15.0f);
+
+			renderer->DrawCustomEllipse(
+				{ ent.bones[model::humanoid::bone::head].x, ent.bones[model::humanoid::bone::head].y - (head_diameter/2) },
+				head_diameter, 
+				head_diameter,
+				true, 
+				{ ent_col.r, ent_col.g, ent_col.b, 0.75f },
+				1, 
+				ent_col
+			);
+
+
+		}catch(...){}
+
+
+		// if (ent.isVisible) {
+		// 	renderer->DrawCustomEllipse({ ent.x,ent.y }, 5, 5, true, { 1,0,0,1 }, 0, { 0,0,0,0 });
+		//
+		// }
+		// else {
+		// 	renderer->DrawCustomEllipse({ ent.x,ent.y }, 5, 5, true, { 0,0,1,1 }, 0, { 0,0,0,0 });
+		//
+		// }
+		renderer->DrawStringCenteredC((wchar_t*)ent.name, 12, { ent.x,ent.y + 15 }, { 0.8f,0.8f,0.8f,1 });
+
+		static wchar_t buff[256];
+		if (swprintf(buff, 256, L"%.1fm", ent.distance) < 0)
+		{
+			ERR(L"BAD swprintf");
+		}
+		const std::wstring ws(buff);
+		
+		renderer->DrawStringCenteredC(ws.c_str(), 12, { ent.x,ent.y + 30 }, { 0.8f,0.8f,0.8f,1 });
 	}
 	
 }

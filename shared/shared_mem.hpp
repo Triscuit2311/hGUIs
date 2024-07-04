@@ -62,6 +62,50 @@ public:
 
 
 
+template <typename T, size_t N>
+class shared_memory_array {
+private:
+    std::wstring name_;
+    HANDLE h_map_file_;
+    T* p_buf_;
+    std::mutex mutex_;
+
+public:
+    shared_memory_array(const std::wstring& name) : name_(name)
+    {
+        size_t size_ = N * sizeof(T);
+        h_map_file_ = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, size_, name_.c_str());
+        if (h_map_file_ == nullptr) {
+            throw std::runtime_error("Could not create file mapping object.");
+        }
+        p_buf_ = static_cast<T*>(MapViewOfFile(h_map_file_, FILE_MAP_ALL_ACCESS, 0, 0, size_));
+        if (p_buf_ == nullptr) {
+            CloseHandle(h_map_file_);
+            throw std::runtime_error("Could not map view of file.");
+        }
+    }
+
+    ~shared_memory_array() {
+        UnmapViewOfFile(p_buf_);
+        CloseHandle(h_map_file_);
+    }
+
+    bool write(const T(&data)[N])
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        memcpy(p_buf_, data, N * sizeof(T));
+        return true;
+    }
+
+    bool read(T(&data)[N])
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        memcpy(data, p_buf_, N * sizeof(T));
+        return true;
+    }
+};
+
+
 
 template <typename T>
 class shared_memory_single {

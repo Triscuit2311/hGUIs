@@ -14,14 +14,7 @@ namespace model
 
 	struct humanoid
 	{
-		bool stale = true;
-		float x = 0;
-		float y = 0;
-		uint16_t name[128] = {};
-		float distance = 0;
-		bool isVisible = false;
-		uint8_t team = 0;
-		Vector2 bones[16];
+
 
 
 		enum bone : uint8_t
@@ -43,6 +36,25 @@ namespace model
 			r_foot,
 			l_foot,
 		};
+
+		enum team_type : uint8_t
+		{
+			SELF,
+			TEAM,
+			ENEMY,
+			TEAM_BOT,
+			ENEMY_BOT,
+		};
+
+
+		bool stale = true;
+		float x = 0;
+		float y = 0;
+		uint16_t name[128] = {};
+		float distance = 0;
+		bool isVisible = false;
+		team_type team = SELF;
+		Vector2 bones[16];
 	};
 
 

@@ -22,6 +22,14 @@ bool use_splash = false;
 bool exit_thread = false;
 
 
+namespace ESP_COLORS
+{
+	inline static D2D1_COLOR_F self{ .2f,.2f,.2f,1 };
+	inline static D2D1_COLOR_F team{ .2f, .9f,.5f,1 };
+	inline static D2D1_COLOR_F enemy{ .9f,.2f,.2f,1 };
+	inline static D2D1_COLOR_F team_bot{ .2f,.5f,.9f,1 };
+	inline static D2D1_COLOR_F enemy_bot{ .9f,.5f,.2f,1 };
+}
 
 
 float scale_on_dist(float distance, float min_dist, float max_dist, float min_scale, float max_scale) {
@@ -201,17 +209,31 @@ void render_direct_pre(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::D
 {
 	renderer->DrawStringC(L"Triscuit2311", 8.0f, {10, 10}, {1, 1, 1, 1});
 
-	renderer->DrawStringC(s2ws((char*) & model::g_menu_settings.some_str), 18.0f, {10, 110}, {1, 1, 1, 1});
+	renderer->DrawStringC(s2ws((char*) & model::g_menu_settings.some_str), 20.0f, {10, 110}, {1, 1, 1, 1});
 
 
 
 	g_enemy_shm.read(g_enemy_array);
 	for (const auto& ent : g_enemy_array) {
 		if (ent.stale) { break; }
-		//LOG(L".");
 		if (ent.x < 0 || ent.x > width || ent.y < 0 || ent.y > height) { continue; }
 
-		D2D1_COLOR_F ent_col = ent.team == 0 ? D2D1_COLOR_F{ 0, 1, 0, 1 } : ent.team == 1 ? D2D1_COLOR_F{ 0, 0, 1, 1 } : D2D1_COLOR_F{ 1, 0, 0, 1 };
+		D2D1_COLOR_F ent_col = ESP_COLORS::self;
+		switch(ent.team){
+			//SELF already assigned
+		case model::humanoid::TEAM:
+			ent_col = ESP_COLORS::team;
+			break;
+		case model::humanoid::ENEMY:
+			ent_col = ESP_COLORS::enemy;
+			break;
+		case model::humanoid::TEAM_BOT:
+			ent_col = ESP_COLORS::team_bot;
+			break;
+		case model::humanoid::ENEMY_BOT:
+			ent_col = ESP_COLORS::enemy_bot;
+			break;
+		}
 
 
 
@@ -219,29 +241,30 @@ void render_direct_pre(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::D
 
 		try
 		{
-			renderer->DrawLineC(ent.bones[model::humanoid::bone::head], ent.bones[model::humanoid::bone::neck], 1, ent_col); // Neck
+			float thiccness = 2.0f;
+			renderer->DrawLineC(ent.bones[model::humanoid::bone::head], ent.bones[model::humanoid::bone::neck], thiccness, ent_col); // Neck
 			{
 				// Arms
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::neck], ent.bones[model::humanoid::bone::l_shoulder], 1, ent_col); // Left Upper Arm
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::neck], ent.bones[model::humanoid::bone::r_shoulder], 1, ent_col); // Right Upper Arm
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_shoulder], ent.bones[model::humanoid::bone::l_elbow], 1, ent_col); // Left Upper Arm
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_shoulder], ent.bones[model::humanoid::bone::r_elbow], 1, ent_col); // Right Upper Arm
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_elbow], ent.bones[model::humanoid::bone::l_hand], 1, ent_col);; // Left Lower Arm
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_elbow], ent.bones[model::humanoid::bone::r_hand], 1, ent_col); // Right Lower Arm
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::neck], ent.bones[model::humanoid::bone::l_shoulder], thiccness, ent_col); // Left Upper Arm
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::neck], ent.bones[model::humanoid::bone::r_shoulder], thiccness, ent_col); // Right Upper Arm
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_shoulder], ent.bones[model::humanoid::bone::l_elbow], thiccness, ent_col); // Left Upper Arm
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_shoulder], ent.bones[model::humanoid::bone::r_elbow], thiccness, ent_col); // Right Upper Arm
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_elbow], ent.bones[model::humanoid::bone::l_hand], thiccness, ent_col);; // Left Lower Arm
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_elbow], ent.bones[model::humanoid::bone::r_hand], thiccness, ent_col); // Right Lower Arm
 			}
 			{
 				// Body
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::neck], ent.bones[model::humanoid::bone::chest], 1, ent_col); // Upper Chest
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::chest], ent.bones[model::humanoid::bone::pelvis], 1, ent_col); // Torso
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::neck], ent.bones[model::humanoid::bone::chest], thiccness, ent_col); // Upper Chest
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::chest], ent.bones[model::humanoid::bone::pelvis], thiccness, ent_col); // Torso
 			}
 			{
 				// Legs
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::pelvis], ent.bones[model::humanoid::bone::l_hip], 1, ent_col); // Left Upper Leg
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::pelvis], ent.bones[model::humanoid::bone::r_hip], 1, ent_col); // Right Upper Leg
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_hip], ent.bones[model::humanoid::bone::l_knee], 1, ent_col); // Left Upper Leg
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_hip], ent.bones[model::humanoid::bone::r_knee], 1, ent_col); // Right Upper Leg
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_knee], ent.bones[model::humanoid::bone::l_foot], 1, ent_col); // Left Lower Leg
-				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_knee], ent.bones[model::humanoid::bone::r_foot], 1, ent_col); // Right Lower Leg
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::pelvis], ent.bones[model::humanoid::bone::l_hip], thiccness, ent_col); // Left Upper Leg
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::pelvis], ent.bones[model::humanoid::bone::r_hip], thiccness, ent_col); // Right Upper Leg
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_hip], ent.bones[model::humanoid::bone::l_knee], thiccness, ent_col); // Left Upper Leg
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_hip], ent.bones[model::humanoid::bone::r_knee], thiccness, ent_col); // Right Upper Leg
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_knee], ent.bones[model::humanoid::bone::l_foot], thiccness, ent_col); // Left Lower Leg
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_knee], ent.bones[model::humanoid::bone::r_foot], thiccness, ent_col); // Right Lower Leg
 			}
 
 

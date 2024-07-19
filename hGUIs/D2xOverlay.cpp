@@ -3,6 +3,8 @@
 
 #include <windows.h>
 #include <dwmapi.h>
+
+#include "hGUI.h"
 #pragma comment(lib, "dwmapi.lib")
 
 
@@ -624,9 +626,6 @@ namespace Renderer
 
 		SetRenderTargetSize();
 
-
-		SPE(L"BITMAP CREATION STARTING");
-
 		CoCreateInstance(
 			CLSID_WICImagingFactory, nullptr,
 			CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_WicFactory));
@@ -658,8 +657,8 @@ namespace Renderer
 							converter, nullptr, &tBitmap);
 						if (SUCCEEDED(hr))
 						{
-							INF(L"Bitmap Creation Successful: %ws", filePath.c_str());
-							INF(L"Bitmap size: (%d, %d)", tBitmap->GetPixelSize().width, tBitmap->GetPixelSize().height);
+							//INF(L"Bitmap Creation Successful: %ws", filePath.c_str());
+							//INF(L"Bitmap size: (%d, %d)", tBitmap->GetPixelSize().width, tBitmap->GetPixelSize().height);
 
 							this->m_BitmapLibrary.emplace_back(tBitmap);
 							return static_cast<D2DBitmapID>(m_BitmapLibrary.size() - 1);
@@ -753,8 +752,8 @@ namespace Renderer
 			return -1;
 		}
 
-		INF(L"Bitmap Creation Successful from byte array");
-		INF(L"Bitmap size: (%d, %d)", tBitmap->GetPixelSize().width, tBitmap->GetPixelSize().height);
+		//INF(L"Bitmap Creation Successful from byte array");
+		//INF(L"Bitmap size: (%d, %d)", tBitmap->GetPixelSize().width, tBitmap->GetPixelSize().height);
 
 		this->m_BitmapLibrary.emplace_back(tBitmap);
 
@@ -950,48 +949,42 @@ namespace Renderer
 	}
 
 
-	bool D2DxOverlay::RenderLoop() const
-	{
+	bool D2DxOverlay::RenderLoop() const {
 		MSG message;
 		message.message = WM_NULL;
 
 		ShowWindow(OverlayHwnd, 1);
 		SetLayeredWindowAttributes(OverlayHwnd, RGB(0, 0, 0), 255, LWA_ALPHA);
 
-
-		if (message.message != WM_QUIT)
-		{
+		if (message.message != WM_QUIT) {
 			// If there are any messages in the message queue, retrieve and process them
-			if (PeekMessage(&message, OverlayHwnd, NULL, NULL, PM_REMOVE))
-			{
+			if (PeekMessage(&message, NULL, NULL, NULL, PM_REMOVE)) {
 				TranslateMessage(&message);
 				DispatchMessage(&message);
 			}
 
 			UpdateWindow(OverlayHwnd);
 
-			
-
 			// Start render
 			m_D2D1RenderTarget->BeginDraw();
 			m_D2D1RenderTarget->Clear(D2D1::ColorF(0, 0, 0, 0));
 
-			if (DrawLoopCallback != nullptr)
-			{
+			if (DrawLoopCallback != nullptr) {
 				DrawLoopCallback(DesktopSize.width, DesktopSize.height);
 			}
 
 			m_D2D1RenderTarget->EndDraw();
 
 		}
-		else
-		{
+		else {
 			// If WM_QUIT was received, stop rendering and return false
 			return false;
 		}
 
 		return true;
 	}
+
+
 }
 
 
@@ -1039,15 +1032,22 @@ namespace Renderer
 		D2DxOverlay d2;
 
 		// Setup D2D and window resources
-		INF(L"HWND: 0x%X\n", D2DxOverlay::EnumHwnd);
+		INF(L"HWND: 0x%X", D2DxOverlay::EnumHwnd);
 		d2.Initialize(D2DxOverlay::EnumHwnd);
 		INF(L"Dx Setup complete, starting render loop");
 
+		if (!SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS)) {
+			ERR(L"Failed to set process priority");
+		}
+	
 		// Enter the rendering loop
 		while (d2.RenderLoop() && !D2DxOverlay::exit)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
+
+
+		//::UnregisterHotKey(NULL, 100);
 
 
 
@@ -1069,6 +1069,8 @@ namespace Renderer
 
 	LRESULT CALLBACK WindowProc(const HWND hwnd, const UINT uMsg, const WPARAM wParam, const LPARAM lParam)
 	{
+
+
 		// Switch statement to handle different window messages
 		switch (uMsg)
 		{
@@ -1112,26 +1114,6 @@ namespace Renderer
 
 	void D2DxOverlay::ToggleAcrylicEffect(bool enable)
 	{
-
-		// HRESULT hr = S_OK;
-		// DWM_BLURBEHIND bb = { 0 };
-		//
-		// if (enable) {
-		// 	// Enable blur behind window
-		// 	bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
-		// 	bb.fEnable = TRUE;
-		// 	bb.hRgnBlur = NULL;
-		// }
-		// else {
-		// 	// Disable blur behind window
-		// 	bb.dwFlags = DWM_BB_ENABLE;
-		// 	bb.fEnable = FALSE;
-		// }
-		//
-		// hr = DwmEnableBlurBehindWindow(OverlayHwnd, &bb);
-		// if (FAILED(hr)) {
-		// 	// Handle error
-		// }
 
 		// WINDOWS 10 ONLY
 		static HMODULE hUser = LoadLibrary(L"user32.dll");
@@ -1182,23 +1164,24 @@ namespace Renderer
 
 	void D2DxOverlay::InitializeWindow(const HWND tWindow)
 	{
+
 		TargetHwnd = tWindow;
 		this->TargetWindowInit = true;
-
+		
 		WNDCLASS wc = {};
 		wc.lpfnWndProc = WindowProc;
 		wc.hInstance = GetModuleHandle(nullptr);
 		wc.lpszClassName = WindowClassName.c_str();
 		wc.hbrBackground = nullptr;
 		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-
+		
 		RegisterClass(&wc);
-
+		
 		OverlayHwnd = CreateWindowEx(
 			WindowFlags,
 			wc.lpszClassName, WindowName.c_str(),
-
-
+		
+		
 			//TODO: POPUPWINDOW HAS BORDER
 			//.. BUT POPUP FLICKERS
 			//WS_POPUPWINDOW, WS_BORDER, WS_DLGFRAME flags fix this.
@@ -1207,13 +1190,13 @@ namespace Renderer
 			0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
 			nullptr, nullptr,
 			wc.hInstance, nullptr);
-
-
+		
+		
 		MARGINS margins = { 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN) };
 		DwmExtendFrameIntoClientArea(OverlayHwnd, &margins);
-
+		
 		SetWindowLongPtr(OverlayHwnd, GWL_STYLE, GetWindowLongPtr(OverlayHwnd, GWL_STYLE) | WS_EX_COMPOSITED);
-
+		
 		SetWindowPos(OverlayHwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 		InvalidateRect(OverlayHwnd, nullptr, TRUE);
 		UpdateWindow(OverlayHwnd);

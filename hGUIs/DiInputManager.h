@@ -257,11 +257,13 @@ private:
 		unsigned cycleLatencyMs, bool allowKeyboard,
 		bool allowMouse);
 
+
 public:
 	DiInputManager();
 	std::wstring GetInputName(DiInput key);
 	~DiInputManager();
 	bool ScanInputs(DiInput& out,bool allowKeyboard, bool allowMouse);
+	static int dii_to_VK(DiInput input);
 
 	struct MouseDeltas
 	{

@@ -62,9 +62,12 @@ namespace model
 	};
 
 
+
 	struct menu_settings
 	{
-		uint8_t some_str[128] = "";
+		uint8_t status[128] = "";
+		bool is_in_optic = false;
+		marker aim_target;
 	} inline g_menu_settings;
 
 	struct client_settings
@@ -72,11 +75,28 @@ namespace model
 		struct
 		{
 			bool enabled = true;
+			bool skip_bone_vis = false;
 		} esp;
 
 		struct
 		{
 			bool enabled = true;
+
+			bool stick_to_target = true;
+			bool switch_target_without_release = false;
+			bool silent_aim = false;
+
+			bool use_smoothing = false;
+			double smooth_alpha = 0.1f;
+
+			double fov = 0.075f; //%of screen space
+			double optic_fov = 0.15f; //%of screen space
+
+			int aim_key_vKey = VK_XBUTTON1;
+
+			bool smart_bone = false;
+			humanoid::bone target_bone = humanoid::bone::head;
+
 		} aimbot;
 
 		struct
@@ -86,7 +106,6 @@ namespace model
 			bool spread_control = true;
 			double spread_percent = 0.0f;
 			bool no_shake = true;
-			//bool full_auto = true;
 			bool instant_lean = false;
 			bool super_lean = false;
 		} memory;

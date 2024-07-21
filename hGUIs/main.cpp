@@ -29,21 +29,30 @@ namespace VISUALS_COLORS
 
 
 	inline static D2D1_COLOR_F enemy{0.9f, 0.9f, 0.0f, 1};
-	inline static D2D1_COLOR_F enemy_vis{1.0f, 0.2f, 0.0f, 1};
+	inline static D2D1_COLOR_F enemy_vis{0.9f, 0.2f, 0.0f, 1};
 
 	inline static D2D1_COLOR_F enemy_bot{.9f, .5f, 0.0f, 1};
-	inline static D2D1_COLOR_F enemy_bot_vis{1.0f, 0.0f, .5f, 1};
+	inline static D2D1_COLOR_F enemy_bot_vis{0.9f, 0.0f, .5f, 1};
 
 
-	inline static D2D1_COLOR_F team{0.2f, 0.6f, 0.3f, 1};
+	inline static D2D1_COLOR_F team{0.2f, 0.6f, 0.3f, 0.9f};
 	inline static D2D1_COLOR_F team_vis{0.0f, 1.0f, 0.5f, 1};
 
-	inline static D2D1_COLOR_F team_bot{.2f, .4f, .6f, 1};
+	inline static D2D1_COLOR_F team_bot{.2f, .4f, .6f, 0.9f};
 	inline static D2D1_COLOR_F team_bot_vis{0.f, 0.75f, 1.f, 1};
 
 
-	inline static D2D1_COLOR_F target{1, 1, .1f, 1};
-	inline static D2D1_COLOR_F active_target{1, 1, 1, 1};
+	inline static D2D1_COLOR_F target_marker_inactive{1, 1, 1, 1};
+	inline static D2D1_COLOR_F target_marker_active{1, 0.2f, 1, 1};
+
+
+	inline static D2D1_COLOR_F target_line_inactive{ 1, 1, 1, 0.75f };
+	inline static D2D1_COLOR_F target_line_active{ 1, 0.2f, 1, 0.9f };
+
+
+
+	inline static D2D1_COLOR_F fov_circle{ 1, 1, 1, 0.35f };
+
 }
 
 
@@ -60,6 +69,12 @@ float scale_on_dist(float distance, float min_dist, float max_dist, float min_sc
 
 struct local_features
 {
+	struct
+	{
+		DiInputManager::DiInput menu_key = DiInputManager::vKb_INSERT;
+		DiInputManager::DiInput panic_key = DiInputManager::vKb_F12;
+	} menu;
+
 	struct crosshair
 	{
 		enum ch_shape : size_t
@@ -95,6 +110,44 @@ struct local_features
 		DiInputManager::DiInput temp_disable_hk = DiInputManager::vM_RIGHTBTN;
 		DiInputManager::DiInput toggle_disable_hk = DiInputManager::vKb_F7;
 	} g_crosshair;
+
+	struct
+	{
+		struct {
+			bool show = false;
+			double thickness = 2.0f;
+		}fov;
+
+		struct
+		{
+			bool show_target_marker = true;
+			double target_marker_sz_inactive = 4.0f;
+			double target_marker_sz_active = 6.0f;
+
+			bool show_target_line = true;
+			double target_line_sz_active = 1.0f;
+			double target_line_sz_inactive = 2.0f;
+		} aimbot;
+
+		struct
+		{
+			bool enabled = true;
+			bool head_dot = true;
+			bool show_team = true;
+			bool show_enemy = true;
+			bool show_names = true;
+		} esp;
+
+	} visuals;
+
+	struct
+	{
+		struct
+		{
+			DiInputManager::DiInput aimkey = DiInputManager::vM_XBTN1;
+		} aimbot;
+		
+	} data;
 } g_local_features;
 
 
@@ -122,14 +175,48 @@ void setup_gui(const std::shared_ptr<h_gui::workspace>& ws)
 		auto aim_gen = aim->add_tab(L"General");
 		auto grp = aim_gen->add_group(L"Global");
 		grp->toggle(&model::g_client_settings.aimbot.enabled, L"Enabled");
+		grp->toggle(&model::g_client_settings.aimbot.silent_aim, L"Silent Aim");
+		grp->modal_hotkey(&g_local_features.data.aimbot.aimkey, L"Aimkey: %s", L"Select Aimkey", win1);
+
+		auto grp2 = aim_gen->add_group(L"Smoothing");
+		grp2->toggle(&model::g_client_settings.aimbot.use_smoothing, L"Enabled");
+		grp2->slider_double(&model::g_client_settings.aimbot.smooth_alpha, 0.000, 0.999, L"Alpha %.3f");
+
+
+		auto grp3 = aim_gen->add_group(L"FOV");
+		grp3->slider_double(&model::g_client_settings.aimbot.fov, 0.001, 0.9, L"FOV: %.3f (Screen Space)");
+		grp3->slider_double(&model::g_client_settings.aimbot.optic_fov, 0.001, 0.9, L"Optic FOV: %.3f (Screen Space)");
+
 	}
 
 	cat = win1->add_category(L"CAT2");
 	{
-		auto esp = cat->add_section(L"ESP", L"icons/eye_scan.png");
-		auto aim_gen = esp->add_tab(L"General");
-		auto grp = aim_gen->add_group(L"Global");
-		grp->toggle(&model::g_client_settings.esp.enabled, L"Enabled");
+		auto visuals_Sec = cat->add_section(L"Visuals", L"icons/eye_scan.png");
+
+		auto esp_tab = visuals_Sec->add_tab(L"ESP");
+		auto grp = esp_tab->add_group(L"Global");
+		grp->toggle(&g_local_features.visuals.esp.enabled, L"Enabled");
+		grp->toggle(&g_local_features.visuals.esp.show_enemy, L"Show Enemy");
+		grp->toggle(&g_local_features.visuals.esp.show_team, L"Show Team");
+		grp->toggle(&g_local_features.visuals.esp.head_dot, L"Head Dot (Dynamic)");
+
+
+		auto misc_tab = visuals_Sec->add_tab(L"Misc");
+		grp = misc_tab->add_group(L"Aimbot Visuals");
+		grp->label(L"FOV");
+		grp->toggle(&g_local_features.visuals.fov.show, L"Show FOV Circle");
+		grp->slider_double(&g_local_features.visuals.fov.thickness, 1, 5, L"Thickness: %.0fpx");
+		
+		grp->label(L"Targeting");
+
+		grp->toggle(&g_local_features.visuals.aimbot.show_target_marker, L"Show Marker");
+		grp->slider_double(&g_local_features.visuals.aimbot.target_marker_sz_active, 1, 10, L"Size (Active): %.0fpx");
+		grp->slider_double(&g_local_features.visuals.aimbot.target_marker_sz_inactive, 1, 10, L"Size (Inactive): %.0fpx");
+
+
+		grp->toggle(&g_local_features.visuals.aimbot.show_target_line, L"Show Line");
+		grp->slider_double(&g_local_features.visuals.aimbot.target_line_sz_active, 1, 10, L"Size (Active): %.0fpx");
+		grp->slider_double(&g_local_features.visuals.aimbot.target_line_sz_inactive, 1, 10, L"Size (Inactive): %.0fpx");
 	}
 
 	// grp->toggle(&b[0], L"Toggle");
@@ -170,7 +257,6 @@ void setup_gui(const std::shared_ptr<h_gui::workspace>& ws)
 		weapon->toggle(&model::g_client_settings.memory.spread_control, L"Spread Control");
 		weapon->slider_double(&model::g_client_settings.memory.spread_percent, 0.00, 1.0, L"Spread Amount: %.1f");
 		weapon->toggle(&model::g_client_settings.memory.no_shake, L"No Shake");
-		//weapon->toggle(&model::g_client_settings.memory.full_auto, L"Full Auto");
 
 
 		auto player = memory_tab->add_group(L"Player");
@@ -221,18 +307,31 @@ void setup_gui(const std::shared_ptr<h_gui::workspace>& ws)
 		auto col_sec = cat3->add_section(L"Colors", L"icons/pallete.png");
 		auto vistab = col_sec->add_tab(L"Visuals");
 		auto g1 = vistab->add_group(L"Player ESP");
-		g1->modal_color(&VISUALS_COLORS::enemy, L"Enemy Players", win1);
-		g1->modal_color(&VISUALS_COLORS::enemy_bot, L"Enemy Bots", win1);
-		g1->modal_color(&VISUALS_COLORS::team, L"Team Players", win1);
-		g1->modal_color(&VISUALS_COLORS::team_bot, L"Team Bots", win1);
+		g1->modal_color(&VISUALS_COLORS::enemy, L"Enemy Players [Hidden]", win1);
+		g1->modal_color(&VISUALS_COLORS::enemy_vis, L"Enemy Players [Visible]", win1);
+		g1->modal_color(&VISUALS_COLORS::enemy_bot, L"Enemy Bots [Hidden]", win1);
+		g1->modal_color(&VISUALS_COLORS::enemy_bot_vis, L"Enemy Bots [Visible]", win1);
+		g1->modal_color(&VISUALS_COLORS::team, L"Team Players [Hidden]", win1);
+		g1->modal_color(&VISUALS_COLORS::team_vis, L"Team Players [Visible]", win1);
+		g1->modal_color(&VISUALS_COLORS::team_bot, L"Team Bots [Hidden]", win1);
+		g1->modal_color(&VISUALS_COLORS::team_bot_vis, L"Team Bots [Visible]", win1);
 
 		auto g2 = vistab->add_group(L"Aimbot");
-		g2->modal_color(&VISUALS_COLORS::target, L"Target Dot", win1);
-		g2->modal_color(&VISUALS_COLORS::active_target, L"Active Target Dot", win1);
+		g2->modal_color(&VISUALS_COLORS::fov_circle, L"FOV Circle", win1);
+		g2->modal_color(&VISUALS_COLORS::target_marker_inactive, L"Target Marker [Inactive]", win1);
+		g2->modal_color(&VISUALS_COLORS::target_marker_active, L"Target Marker [Active]", win1);
+		g2->modal_color(&VISUALS_COLORS::target_line_inactive, L"Target Line [Inactive]", win1);
+		g2->modal_color(&VISUALS_COLORS::target_line_active, L"Target Line [Active]", win1);
 	}
 
 
-	cat3->add_section(L"Hotkeys", L"icons/lightning.png");
+	auto hotkeys_sec = cat3->add_section(L"Hotkeys", L"icons/lightning.png");
+	{
+		auto gen_tab = hotkeys_sec->add_tab(L"General");
+		auto menu_g = gen_tab->add_group(L"Menu");
+		menu_g->modal_hotkey(&g_local_features.menu.menu_key, L"Show/Hide Menu: %s", L"Select Menu Key", win1);
+		menu_g->modal_hotkey(&g_local_features.menu.panic_key, L"Panic (Kill GUI): %s", L"Select Panic Key", win1);
+	}
 	cat3->add_section(L"System", L"icons/settings.png");
 }
 
@@ -249,17 +348,18 @@ void load_resources(Renderer::D2DxOverlay* renderer)
 // Executed once per frame, before any rendering
 void pre_render(std::shared_ptr<DiInputManager> inputs, Renderer::D2DxOverlay* renderer)
 {
-	if (inputs->IsInputJustReleased(DiInputManager::vKb_F12))
+	if (inputs->IsInputJustReleased(g_local_features.menu.panic_key))
 	{
 		Renderer::D2DxOverlay::exit = true;
 		exit_thread = true;
 	}
 
-	//if (inputs->IsInputJustReleased(DiInputManager::vKb_INSERT))
-	if (GetAsyncKeyState(VK_INSERT) & 1)
+	if (GetAsyncKeyState(DiInputManager::dii_to_VK(g_local_features.menu.menu_key)) & 1)
 	{
 		h_gui::gui_manager::toggle_menu();
 	}
+
+	model::g_client_settings.aimbot.aim_key_vKey = DiInputManager::dii_to_VK(g_local_features.data.aimbot.aimkey);
 
 	menu_shm.read(&model::g_menu_settings);
 	client_shm.write(&model::g_client_settings);
@@ -268,146 +368,216 @@ void pre_render(std::shared_ptr<DiInputManager> inputs, Renderer::D2DxOverlay* r
 // Draw directly to the screen BEHIND the main GUI
 void render_direct_pre(UINT32 width, UINT32 height, LPPOINT cur_pos, Renderer::D2DxOverlay* renderer)
 {
+
 	renderer->DrawStringC(L"Triscuit2311", 8.0f, {10, 10}, {1, 1, 1, 1});
+	renderer->DrawStringC(s2ws((char*)&model::g_menu_settings.status), 12.0f, {10, 40}, {1, 1, 1, 1});
 
-	renderer->DrawStringC(s2ws((char*)&model::g_menu_settings.some_str), 20.0f, {10, 110}, {1, 1, 1, 1});
 
+	g_player_shm.read();
+
+	//Player Loop
+	if (g_local_features.visuals.esp.enabled) {
+		for (const auto& ent : g_player_shm)
+		{
+			if (ent.stale) { break; }
+			if (ent.x < 0 || ent.x > width || ent.y < 0 || ent.y > height) { continue; }
+
+			D2D1_COLOR_F ent_col = VISUALS_COLORS::self;
+			D2D1_COLOR_F ent_col_vis = VISUALS_COLORS::self;
+			switch (ent.team)
+			{
+				//SELF already assigned
+			case model::humanoid::TEAM:
+				if(!g_local_features.visuals.esp.show_team)
+				{
+					continue;
+				}
+				ent_col = VISUALS_COLORS::team;
+				ent_col_vis = VISUALS_COLORS::team_vis;
+				break;
+			case model::humanoid::ENEMY:
+				if (!g_local_features.visuals.esp.show_enemy)
+				{
+					continue;
+				}
+				ent_col = VISUALS_COLORS::enemy;
+				ent_col_vis = VISUALS_COLORS::enemy_vis;
+				break;
+			case model::humanoid::TEAM_BOT:
+				if (!g_local_features.visuals.esp.show_team)
+				{
+					continue;
+				}
+				ent_col = VISUALS_COLORS::team_bot;
+				ent_col_vis = VISUALS_COLORS::team_bot_vis;
+				break;
+			case model::humanoid::ENEMY_BOT:
+				if (!g_local_features.visuals.esp.show_enemy)
+				{
+					continue;
+				}
+				ent_col = VISUALS_COLORS::enemy_bot;
+				ent_col_vis = VISUALS_COLORS::enemy_bot_vis;
+				break;
+			}
+
+			try
+			{
+				float thiccness = ent.distance < 15 ? 5.0f : ent.distance < 25 ? 3.0f : 2.0f;
+
+				auto line_wrapper = [&](const model::humanoid::bone a, const model::humanoid::bone b)
+					{
+						renderer->DrawLineC(ent.bones[a], ent.bones[b], thiccness,
+							(ent.bones_vis[a] && ent.bones_vis[b]) ? ent_col_vis : ent_col
+						);
+					};
+
+
+				line_wrapper(model::humanoid::bone::head, model::humanoid::bone::neck);
+				line_wrapper(model::humanoid::bone::neck, model::humanoid::bone::l_shoulder); // // Left Upper Arm
+				line_wrapper(model::humanoid::bone::neck, model::humanoid::bone::r_shoulder); // // Right Upper Arm
+				line_wrapper(model::humanoid::bone::l_shoulder, model::humanoid::bone::l_elbow); // // Left Upper Arm
+				line_wrapper(model::humanoid::bone::r_shoulder, model::humanoid::bone::r_elbow); // // Right Upper Arm
+				line_wrapper(model::humanoid::bone::l_elbow, model::humanoid::bone::l_hand); //; // Left Lower Arm
+				line_wrapper(model::humanoid::bone::r_elbow, model::humanoid::bone::r_hand); // // Right Lower Arm
+				line_wrapper(model::humanoid::bone::neck, model::humanoid::bone::chest); // // Upper Chest
+				line_wrapper(model::humanoid::bone::chest, model::humanoid::bone::pelvis); // // Torso
+				line_wrapper(model::humanoid::bone::pelvis, model::humanoid::bone::l_hip); // // Left Upper Leg
+				line_wrapper(model::humanoid::bone::pelvis, model::humanoid::bone::r_hip); // // Right Upper Leg
+				line_wrapper(model::humanoid::bone::l_hip, model::humanoid::bone::l_knee); // // Left Upper Leg
+				line_wrapper(model::humanoid::bone::r_hip, model::humanoid::bone::r_knee); // // Right Upper Leg
+
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::l_knee], ent.bones[model::humanoid::bone::l_foot],
+					thiccness,
+					(ent.bones_vis[model::humanoid::bone::l_knee]) ? ent_col_vis : ent_col
+				);
+				renderer->DrawLineC(ent.bones[model::humanoid::bone::r_knee], ent.bones[model::humanoid::bone::r_foot],
+					thiccness,
+					(ent.bones_vis[model::humanoid::bone::r_knee]) ? ent_col_vis : ent_col
+				);
+
+
+				// todo: fix this, make it less shitty
+				// TODO: make it on the aim point dummy
+				// if (ent.is_target)
+				// {
+				// 	ent_col = ent.is_target_active ? VISUALS_COLORS::target_marker_active : VISUALS_COLORS::target;
+				// }
+
+				// did better
+				auto head_col = (ent.bones_vis[model::humanoid::bone::head]) ? ent_col_vis : ent_col;
+				float head_diameter = ent.bones[model::humanoid::bone::top_of_head].y - ent.bones[model::humanoid::bone::head].y;
+				renderer->DrawCustomEllipse(
+					{
+						ent.bones[model::humanoid::bone::head].x,
+						ent.bones[model::humanoid::bone::head].y - (head_diameter / 2)
+					},
+					head_diameter / 2,
+					head_diameter / 2,
+					true,
+					{ head_col.r, head_col.g, head_col.b, 0.75f },
+					1,
+					head_col
+				);
+			}
+			catch (...)
+			{
+			}
+
+
+			const float fontsize = 13;
+
+			if (g_local_features.visuals.esp.show_names)
+			{
+				renderer->DrawStringCenteredC((wchar_t*)ent.name, fontsize, { ent.x + 1, ent.y + fontsize + 1 }, { 0.f, 0.0f, 0.0f, 1 });
+				renderer->DrawStringCenteredC((wchar_t*)ent.name, fontsize, { ent.x - 1, ent.y + fontsize - 1 }, { 0.f, 0.0f, 0.0f, 1 });
+				renderer->DrawStringCenteredC((wchar_t*)ent.name, fontsize, { ent.x + 1, ent.y + fontsize - 1 }, { 0.f, 0.0f, 0.0f, 1 });
+				renderer->DrawStringCenteredC((wchar_t*)ent.name, fontsize, { ent.x - 1, ent.y + fontsize + 1 }, { 0.f, 0.0f, 0.0f, 1 });
+				renderer->DrawStringCenteredC((wchar_t*)ent.name, fontsize, { ent.x, ent.y + fontsize }, { 0.8f, 0.8f, 0.8f, 1 });
+			}
+
+			if (g_local_features.visuals.esp.show_names) {
+
+				float offset = g_local_features.visuals.esp.show_names ? fontsize*2.5 : fontsize;
+
+				static wchar_t buff[256];
+				if (swprintf(buff, 256, L"%.1fm", ent.distance) < 0)
+				{
+					ERR(L"BAD swprintf");
+				}
+				const std::wstring ws(buff);
+
+				renderer->DrawStringCenteredC(ws.c_str(), fontsize, { ent.x + 1, ent.y + offset + 1 }, { 0.0f, 0.0f, 0.0f, 1 });
+				renderer->DrawStringCenteredC(ws.c_str(), fontsize, { ent.x - 1, ent.y + offset - 1 }, { 0.0f, 0.0f, 0.0f, 1 });
+				renderer->DrawStringCenteredC(ws.c_str(), fontsize, { ent.x + 1, ent.y + offset - 1 }, { 0.0f, 0.0f, 0.0f, 1 });
+				renderer->DrawStringCenteredC(ws.c_str(), fontsize, { ent.x - 1, ent.y + offset + 1 }, { 0.0f, 0.0f, 0.0f, 1 });
+				renderer->DrawStringCenteredC(ws.c_str(), fontsize, { ent.x, ent.y + offset }, { 0.8f, 0.8f, 0.8f, 1 });
+
+			}
+		} // end player loop
+	}
+
+	if(g_local_features.visuals.aimbot.show_target_marker && !model::g_menu_settings.aim_target.stale)
+	{
+		const auto sz = model::g_menu_settings.aim_target.visible ? g_local_features.visuals.aimbot.target_marker_sz_active : g_local_features.visuals.aimbot.target_marker_sz_inactive;
+
+		renderer->DrawCustomEllipse(
+			{ model::g_menu_settings.aim_target.spos.x, model::g_menu_settings.aim_target.spos.y - 2 },
+			sz,
+			sz,
+			true,
+			model::g_menu_settings.aim_target.visible ? VISUALS_COLORS::target_marker_active : VISUALS_COLORS::target_marker_inactive,
+			0,
+			{ 1, 1, 1, 0.8f }
+		);
+	}
+
+	if (g_local_features.visuals.aimbot.show_target_line && !model::g_menu_settings.aim_target.stale)
+	{
+		const auto sz = model::g_menu_settings.aim_target.visible ? g_local_features.visuals.aimbot.target_line_sz_active : g_local_features.visuals.aimbot.target_line_sz_inactive;
+
+		renderer->DrawLineC(
+			    { (float)width / 2.0f, (float)height / 2.0f }, 
+			{ model::g_menu_settings.aim_target.spos.x, model::g_menu_settings.aim_target.spos.y - 2 }, sz,
+			model::g_menu_settings.aim_target.visible ? VISUALS_COLORS::target_line_active : VISUALS_COLORS::target_line_inactive);
+
+	}
 
 	g_marker_shm.read();
 	for (auto& m : g_marker_shm)
 	{
 		if (m.stale) { continue; }
-		D2D1_COLOR_F col = {1, 1, 1, 1};
+		D2D1_COLOR_F col = { 1, 1, 1, 1 };
 		if (m.visible)
 		{
-			col = {0, 1, 0, 1};
+			col = { 0, 1, 0, 1 };
 		}
 		renderer->DrawCustomEllipse(
-			{m.spos.x, m.spos.y - 2},
-			2,
-			2,
+			{ m.spos.x, m.spos.y - 2 },
+			3,
+			3,
 			true,
 			col,
 			0,
-			{1, 1, 1, 0.8f}
+			{ 1, 1, 1, 0.8f }
 		);
 	}
 
-	g_player_shm.read();
-	for (const auto& ent : g_player_shm)
+	if(g_local_features.visuals.fov.show)
 	{
-		if (ent.stale) { break; }
-		if (ent.x < 0 || ent.x > width || ent.y < 0 || ent.y > height) { continue; }
-
-		D2D1_COLOR_F ent_col = VISUALS_COLORS::self;
-		D2D1_COLOR_F ent_col_vis = VISUALS_COLORS::self;
-		switch (ent.team)
-		{
-		//SELF already assigned
-		case model::humanoid::TEAM:
-			ent_col = VISUALS_COLORS::team;
-			ent_col_vis = VISUALS_COLORS::team_vis;
-			break;
-		case model::humanoid::ENEMY:
-			ent_col = VISUALS_COLORS::enemy;
-			ent_col_vis = VISUALS_COLORS::enemy_vis;
-			break;
-		case model::humanoid::TEAM_BOT:
-			ent_col = VISUALS_COLORS::team_bot;
-			ent_col_vis = VISUALS_COLORS::team_bot_vis;
-			break;
-		case model::humanoid::ENEMY_BOT:
-			ent_col = VISUALS_COLORS::enemy_bot;
-			ent_col_vis = VISUALS_COLORS::enemy_bot_vis;
-			break;
-		}
-
-		try
-		{
-			float thiccness = ent.distance < 15 ? 5.0f : ent.distance < 25 ? 3.0f : 2.0f;
-
-			auto line_wrapper = [&](const model::humanoid::bone a, const model::humanoid::bone b)
-			{
-				renderer->DrawLineC(ent.bones[a], ent.bones[b], thiccness,
-				                    (ent.bones_vis[a] && ent.bones_vis[b]) ? ent_col_vis : ent_col
-				);
-			};
-
-
-			line_wrapper(model::humanoid::bone::head, model::humanoid::bone::neck);
-			line_wrapper(model::humanoid::bone::neck, model::humanoid::bone::l_shoulder); // // Left Upper Arm
-			line_wrapper(model::humanoid::bone::neck, model::humanoid::bone::r_shoulder); // // Right Upper Arm
-			line_wrapper(model::humanoid::bone::l_shoulder, model::humanoid::bone::l_elbow); // // Left Upper Arm
-			line_wrapper(model::humanoid::bone::r_shoulder, model::humanoid::bone::r_elbow); // // Right Upper Arm
-			line_wrapper(model::humanoid::bone::l_elbow, model::humanoid::bone::l_hand); //; // Left Lower Arm
-			line_wrapper(model::humanoid::bone::r_elbow, model::humanoid::bone::r_hand); // // Right Lower Arm
-			line_wrapper(model::humanoid::bone::neck, model::humanoid::bone::chest); // // Upper Chest
-			line_wrapper(model::humanoid::bone::chest, model::humanoid::bone::pelvis); // // Torso
-			line_wrapper(model::humanoid::bone::pelvis, model::humanoid::bone::l_hip); // // Left Upper Leg
-			line_wrapper(model::humanoid::bone::pelvis, model::humanoid::bone::r_hip); // // Right Upper Leg
-			line_wrapper(model::humanoid::bone::l_hip, model::humanoid::bone::l_knee); // // Left Upper Leg
-			line_wrapper(model::humanoid::bone::r_hip, model::humanoid::bone::r_knee); // // Right Upper Leg
-
-			renderer->DrawLineC(ent.bones[model::humanoid::bone::l_knee], ent.bones[model::humanoid::bone::l_foot],
-			                    thiccness,
-			                    (ent.bones_vis[model::humanoid::bone::l_knee]) ? ent_col_vis : ent_col
-			);
-			renderer->DrawLineC(ent.bones[model::humanoid::bone::r_knee], ent.bones[model::humanoid::bone::r_foot],
-			                    thiccness,
-			                    (ent.bones_vis[model::humanoid::bone::r_knee]) ? ent_col_vis : ent_col
-			);
-
-
-			// todo: fix this, make it less shitty
-			// TODO: make it on the aim point dummy
-			// if (ent.is_target)
-			// {
-			// 	ent_col = ent.is_target_active ? VISUALS_COLORS::active_target : VISUALS_COLORS::target;
-			// }
-
-			// did better
-			auto head_col = (ent.bones_vis[model::humanoid::bone::head]) ? ent_col_vis : ent_col;
-			float head_diameter = ent.bones[model::humanoid::bone::top_of_head].y - ent.bones[model::humanoid::bone::head].y;
-			renderer->DrawCustomEllipse(
-				{
-					ent.bones[model::humanoid::bone::head].x,
-					ent.bones[model::humanoid::bone::head].y - (head_diameter / 2)
-				},
-				head_diameter / 2,
-				head_diameter / 2,
-				true,
-				{head_col.r, head_col.g, head_col.b, 0.75f},
-				1,
-				head_col
-			);
-		}
-		catch (...)
-		{
-		}
-
-
-		const float fontsize = 13;
-
-		renderer->DrawStringCenteredC((wchar_t*)ent.name, fontsize, {ent.x + 1, ent.y + 15 + 1}, {0.f, 0.0f, 0.0f, 1});
-		renderer->DrawStringCenteredC((wchar_t*)ent.name, fontsize, {ent.x - 1, ent.y + 15 - 1}, {0.f, 0.0f, 0.0f, 1});
-		renderer->DrawStringCenteredC((wchar_t*)ent.name, fontsize, {ent.x + 1, ent.y + 15 - 1}, {0.f, 0.0f, 0.0f, 1});
-		renderer->DrawStringCenteredC((wchar_t*)ent.name, fontsize, {ent.x - 1, ent.y + 15 + 1}, {0.f, 0.0f, 0.0f, 1});
-
-		renderer->DrawStringCenteredC((wchar_t*)ent.name, fontsize, {ent.x, ent.y + 15}, {0.8f, 0.8f, 0.8f, 1});
-
-		static wchar_t buff[256];
-		if (swprintf(buff, 256, L"%.1fm", ent.distance) < 0)
-		{
-			ERR(L"BAD swprintf");
-		}
-		const std::wstring ws(buff);
-
-		renderer->DrawStringCenteredC(ws.c_str(), fontsize, {ent.x + 1, ent.y + 30 + 1}, {0.0f, 0.0f, 0.0f, 1});
-		renderer->DrawStringCenteredC(ws.c_str(), fontsize, {ent.x - 1, ent.y + 30 - 1}, {0.0f, 0.0f, 0.0f, 1});
-		renderer->DrawStringCenteredC(ws.c_str(), fontsize, {ent.x + 1, ent.y + 30 - 1}, {0.0f, 0.0f, 0.0f, 1});
-		renderer->DrawStringCenteredC(ws.c_str(), fontsize, {ent.x - 1, ent.y + 30 + 1}, {0.0f, 0.0f, 0.0f, 1});
-		renderer->DrawStringCenteredC(ws.c_str(), fontsize, {ent.x, ent.y + 30}, {0.8f, 0.8f, 0.8f, 1});
+		float sz = (float)width * (model::g_menu_settings.is_in_optic ? model::g_client_settings.aimbot.optic_fov : model::g_client_settings.aimbot.fov);
+		renderer->DrawCustomEllipse(
+			{ (float)width / 2.0f, (float)height / 2.0f },
+			sz,
+			sz,
+			false,
+			{ 0,0,0,0 },
+			(float)(g_local_features.visuals.fov.thickness),
+			VISUALS_COLORS::fov_circle
+		);
 	}
+
+
 }
 
 // Draw the main GUI and gui components, only modify if needed
